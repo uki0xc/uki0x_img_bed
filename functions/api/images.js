@@ -81,6 +81,12 @@ async function handleDelete(request, env) {
     if (data.fileId) {
       await deleteFile(env, data.fileId);
     } 
+    // 批量删除文件
+    else if (data.fileIds && Array.isArray(data.fileIds)) {
+      for (const fileId of data.fileIds) {
+        await deleteFile(env, fileId);
+      }
+    }
     // 删除目录
     else if (data.directory) {
       await deleteDirectory(env, data.directory);
@@ -183,6 +189,17 @@ async function listFiles(env, directory) {
               const uploadTime = fileData.uploadTime || fileData.uploadDate || new Date().toISOString();
               const formattedDate = formatDate(uploadTime);
               
+              // 获取图片的额外信息
+              let imageInfo = {};
+              if (fileData.mimeType && fileData.mimeType.startsWith('image/')) {
+                imageInfo = {
+                  width: fileData.width || fileData.imageWidth || 'unknown',
+                  height: fileData.height || fileData.imageHeight || 'unknown',
+                  format: fileData.format || fileData.imageFormat || getImageFormatFromMimeType(fileData.mimeType),
+                  isImage: true
+                };
+              }
+              
               // 映射字段名，兼容新旧数据格式，并添加dashboard.html需要的字段
               files.push({
                 id: fileData.id || fileData.fileUniqueId || keyName,
@@ -195,7 +212,8 @@ async function listFiles(env, directory) {
                 uploadIP: fileData.clientIP || '未知',
                 type: 'file',
                 fileType: fileType,
-                mimeType: fileData.mimeType || ''
+                mimeType: fileData.mimeType || '',
+                ...imageInfo
               });
             } else {
               // 对于子目录下的文件，记录目录名
@@ -371,4 +389,22 @@ function getFileTypeIcon(mimeType) {
   if (mimeType.includes('text/')) return 'fas fa-file-alt';
   
   return 'fas fa-file';
+}
+
+// 从MIME类型获取图片格式
+function getImageFormatFromMimeType(mimeType) {
+  if (!mimeType) return 'unknown';
+  
+  const formatMap = {
+    'image/jpeg': 'JPEG',
+    'image/jpg': 'JPEG',
+    'image/png': 'PNG',
+    'image/gif': 'GIF',
+    'image/webp': 'WebP',
+    'image/svg+xml': 'SVG',
+    'image/bmp': 'BMP',
+    'image/tiff': 'TIFF'
+  };
+  
+  return formatMap[mimeType] || mimeType.split('/')[1]?.toUpperCase() || 'unknown';
 }
