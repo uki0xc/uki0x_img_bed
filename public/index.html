@@ -31,9 +31,6 @@
       background-color: var(--light-bg);
       color: var(--dark-text);
       line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
     }
     
     .container {
@@ -93,7 +90,6 @@
     
     main {
       padding: 40px 0;
-      flex: 1;
     }
     
     .section-title {
@@ -146,13 +142,7 @@
     }
     
     #file-input {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      opacity: 0;
-      cursor: pointer;
+      display: none;
     }
     
     .selected-file {
@@ -162,7 +152,6 @@
       border-radius: 8px;
       display: none;
       animation: fadeIn 0.3s;
-      border: 1px solid #d1d5db;
     }
     
     @keyframes fadeIn {
@@ -223,10 +212,6 @@
     .file-preview {
       margin-top: 15px;
       text-align: center;
-      background-color: #f8fafc;
-      padding: 15px;
-      border-radius: 6px;
-      border: 1px dashed #d1d5db;
     }
     
     .file-preview img {
