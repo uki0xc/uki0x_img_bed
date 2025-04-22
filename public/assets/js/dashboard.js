@@ -8,8 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('login-error');
   const refreshBtn = document.getElementById('refresh-btn');
   const logoutBtn = document.getElementById('logout-btn');
-  const fileList = document.getElementById('file-list');
+  const fileList = document.getElementById('files-list');
   const directoryPath = document.getElementById('directory-path');
+  const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+  
+  // 存储选中的文件ID
+  let selectedFiles = [];
   
   // 检查登录状态
   checkAuthStatus();
@@ -31,6 +35,18 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 登出按钮点击事件
   logoutBtn.addEventListener('click', logout);
+  
+  // 删除选中文件按钮点击事件
+  deleteSelectedBtn.addEventListener('click', () => {
+    if (selectedFiles.length === 0) {
+      alert('请先选择要删除的文件');
+      return;
+    }
+    
+    if (confirm(`确定要删除选中的 ${selectedFiles.length} 个文件吗？`)) {
+      deleteSelectedFiles();
+    }
+  });
   
   // 当前目录
   let currentDirectory = '';
@@ -110,6 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadFiles(directory) {
     try {
       fileList.innerHTML = '<p>正在加载文件...</p>';
+      
+      // 重置选中的文件
+      selectedFiles = [];
+      updateDeleteSelectedButton();
       
       const response = await fetch(`/api/images?directory=${encodeURIComponent(directory)}`);
       if (!response.ok) {
@@ -195,11 +215,29 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
       } else {
-        // 文件卡片
+        // 文件卡片 - 添加多选框
+        const isImage = file.mimeType && file.mimeType.startsWith('image/');
+        
+        // 构建文件信息HTML
+        let fileInfoHtml = '';
+        if (file.size) {
+          fileInfoHtml += `<div class="file-info">大小: ${file.size}</div>`;
+        }
+        if (file.uploadTime && file.uploadTime !== '-') {
+          fileInfoHtml += `<div class="file-info">上传时间: ${file.uploadTime}</div>`;
+        }
+        if (file.uploadIP && file.uploadIP !== '未知' && file.uploadIP !== '-') {
+          fileInfoHtml += `<div class="file-info">上传IP: ${file.uploadIP}</div>`;
+        }
+        
         card.innerHTML = `
+          <div class="file-checkbox">
+            <input type="checkbox" class="file-select" data-id="${file.id}">
+          </div>
           <img src="${file.url}" alt="${file.name}" class="file-thumbnail">
           <div class="file-details">
             <div class="file-name">${file.name}</div>
+            ${fileInfoHtml}
             <div class="file-actions">
               <button class="btn-primary btn-sm copy-url" data-url="${file.url}">复制链接</button>
               <button class="btn-danger btn-sm delete-file" data-id="${file.id}">删除</button>
@@ -246,6 +284,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+    
+    // 添加多选框事件处理
+    document.querySelectorAll('.file-select').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        const fileId = checkbox.dataset.id;
+        
+        if (checkbox.checked) {
+          // 添加到选中列表
+          if (!selectedFiles.includes(fileId)) {
+            selectedFiles.push(fileId);
+          }
+        } else {
+          // 从选中列表移除
+          const index = selectedFiles.indexOf(fileId);
+          if (index !== -1) {
+            selectedFiles.splice(index, 1);
+          }
+        }
+        
+        // 更新删除按钮状态
+        updateDeleteSelectedButton();
+      });
+    });
+  }
+  
+  // 更新删除选中按钮状态
+  function updateDeleteSelectedButton() {
+    if (selectedFiles.length > 0) {
+      deleteSelectedBtn.disabled = false;
+      deleteSelectedBtn.textContent = `删除所选 (${selectedFiles.length})`;
+    } else {
+      deleteSelectedBtn.disabled = true;
+      deleteSelectedBtn.textContent = '删除所选';
+    }
+  }
+  
+  // 删除选中的文件
+  async function deleteSelectedFiles() {
+    if (selectedFiles.length === 0) return;
+    
+    try {
+      // 显示加载状态
+      deleteSelectedBtn.disabled = true;
+      deleteSelectedBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 删除中...';
+      
+      // 逐个删除文件
+      const promises = selectedFiles.map(fileId => 
+        fetch('/api/images', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fileId: fileId
+          })
+        })
+      );
+      
+      await Promise.all(promises);
+      
+      // 删除成功，刷新文件列表
+      selectedFiles = [];
+      loadFiles(currentDirectory);
+      
+    } catch (error) {
+      console.error('批量删除文件失败:', error);
+      alert('批量删除文件失败，请重试');
+      
+      // 恢复按钮状态
+      updateDeleteSelectedButton();
+    }
   }
   
   // 删除目录
