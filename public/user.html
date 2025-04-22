@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户信息 - uki0x 图床</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --primary-hover: #3a56d4;
+      --secondary-color: #f72585;
+      --light-bg: #f8f9fa;
+      --dark-text: #212529;
+      --gray-text: #6c757d;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --success-color: #4CAF50;
+      --success-hover: #43a047;
+      --danger-color: #f44336;
+      --danger-hover: #e53935;
+      --warning-color: #ff9800;
+      --warning-hover: #fb8c00;
+      --info-color: #2196F3;
+      --info-hover: #1e88e5;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    body {
+      background-color: var(--light-bg);
+      color: var(--dark-text);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    header {
+      background-color: white;
+      box-shadow: var(--card-shadow);
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo i {
+      margin-right: 10px;
+    }
+    
+    .nav-links {
+      display: flex;
+      align-items: center;
+    }
+    
+    .nav-link {
+      color: var(--gray-text);
+      text-decoration: none;
+      margin-left: 20px;
+      transition: color 0.3s;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .nav-link:hover {
+      color: var(--primary-color);
+    }
+    
+    .nav-link i {
+      margin-right: 5px;
+    }
+    
+    main {
+      padding: 40px 0;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      color: var(--dark-text);
+      display: flex;
+      align-items: center;
+    }
+    
+    .section-title i {
+      margin-right: 10px;
+      color: var(--primary-color);
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .info-group {
+      margin-bottom: 25px;
+    }
+    
+    .info-label {
+      font-weight: 600;
+      color: var(--gray-text);
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+      font-size: 1.1rem;
+      color: var(--dark-text);
+      padding: 10px 15px;
+      background-color: var(--light-bg);
+      border-radius: 6px;
+      word-break: break-all;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+    
+    .btn i {
+      margin-right: 5px;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn-danger {
+      background-color: var(--danger-color);
+    }
+    
+    .btn-danger:hover {
+      background-color: var(--danger-hover);
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .alert-danger {
+      background-color: #ffebee;
+      color: var(--danger-color);
+      border: 1px solid #ffcdd2;
+    }
+    
+    .alert-success {
+      background-color: #e8f5e9;
+      color: var(--success-color);
+      border: 1px solid #c8e6c9;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .loading i {
+      font-size: 2rem;
+      color: var(--primary-color);
+    }
+    
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    
+    .stat-icon.files {
+      color: var(--primary-color);
+    }
+    
+    .stat-icon.storage {
+      color: var(--warning-color);
+    }
+    
+    .stat-icon.images {
+      color: var(--success-color);
+    }
+    
+    .stat-icon.videos {
+      color: var(--danger-color);
+    }
+    
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      color: var(--gray-text);
+      font-size: 0.9rem;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 20px 0;
+      background-color: white;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .footer-text {
+      color: var(--gray-text);
+      font-size: 0.9rem;
+    }
+    
+    .footer-link {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Media Queries */
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .nav-links {
+        margin-top: 15px;
+      }
+      
+      .nav-link {
+        margin: 5px;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .section-title {
+        font-size: 1.8rem;
+      }
+      
+      .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="fas fa-cloud-upload-alt"></i>
+        uki0x 图床
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">
+          <i class="fas fa-home"></i> 首页
+        </a>
+        <a href="/dashboard.html" class="nav-link">
+          <i class="fas fa-folder-open"></i> 文件管理
+        </a>
+        <a href="#" class="nav-link" id="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> 退出
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div id="user-alert" class="alert"></div>
+      
+      <div id="loading" class="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>加载中...</p>
+      </div>
+      
+      <div class="stats-container" id="stats-container">
+        <div class="stat-card">
+          <div class="stat-icon files">
+            <i class="fas fa-file"></i>
+          </div>
+          <div class="stat-value" id="total-files">0</div>
+          <div class="stat-label">总文件数</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon storage">
+            <i class="fas fa-database"></i>
+          </div>
+          <div class="stat-value" id="total-storage">0</div>
+          <div class="stat-label">存储空间</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon images">
+            <i class="far fa-image"></i>
+          </div>
+          <div class="stat-value" id="total-images">0</div>
+          <div class="stat-label">图片数量</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon videos">
+            <i class="fas fa-film"></i>
+          </div>
+          <div class="stat-value" id="total-videos">0</div>
+          <div class="stat-label">视频数量</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h1 class="section-title">
+          <i class="fas fa-user-shield"></i> 管理员信息
+        </h1>
+        
+        <div class="info-group">
+          <div class="info-label">用户名</div>
+          <div class="info-value" id="admin-username">-</div>
+        </div>
+        
+        <div class="info-group">
+          <div class="info-label">角色</div>
+          <div class="info-value">管理员</div>
+        </div>
+        
+        <div class="info-group">
+          <div class="info-label">登录状态</div>
+          <div class="info-value">已登录</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h2 class="section-title">
+          <i class="fas fa-cog"></i> 系统配置
+        </h2>
+        
+        <div class="info-group">
+          <div class="info-label">Telegram Bot Token</div>
+          <div class="info-value" id="tg-bot-token">******</div>
+        </div>
+        
+        <div class="info-group">
+          <div class="info-label">Telegram Chat ID</div>
+          <div class="info-value" id="tg-chat-id">******</div>
+        </div>
+        
+        <div class="info-group">
+          <div class="info-label">KV 存储 ID</div>
+          <div class="info-value" id="kv-store-id">******</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p class="footer-text">
+        由 CloudFlare Pages 和 Telegram 提供支持 | 
+        <a href="https://github.com/uki0xc/uki0x_img_bed" class="footer-link" target="_blank">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态
+      if (!sessionStorage.getItem('adminLoggedIn')) {
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      // 获取DOM元素
+      const userAlert = document.getElementById('user-alert');
+      const loading = document.getElementById('loading');
+      const logoutBtn = document.getElementById('logout-btn');
+      const adminUsername = document.getElementById('admin-username');
+      const totalFiles = document.getElementById('total-files');
+      const totalStorage = document.getElementById('total-storage');
+      const totalImages = document.getElementById('total-images');
+      const totalVideos = document.getElementById('total-videos');
+      
+      // 初始化
+      loadUserInfo();
+      
+      // 事件监听器
+      logoutBtn.addEventListener('click', logout);
+      
+      // 加载用户信息
+      async function loadUserInfo() {
+        try {
+          showLoading();
+          
+          // 获取认证信息
+          const authHeader = sessionStorage.getItem('adminAuth');
+          const credentials = atob(authHeader).split(':');
+          adminUsername.textContent = credentials[0];
+          
+          // 获取文件统计信息
+          const response = await fetch('/api/list?limit=1000', {
+            headers: {
+              'Authorization': `Basic ${authHeader}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to load files');
+          }
+          
+          const data = await response.json();
+          const files = data.files || [];
+          
+          // 计算统计信息
+          let totalSize = 0;
+          let imageCount = 0;
+          let videoCount = 0;
+          
+          files.forEach(file => {
+            totalSize += file.fileSize || 0;
+            
+            if (file.mimeType && file.mimeType.startsWith('image/')) {
+              imageCount++;
+            } else if (file.mimeType && file.mimeType.startsWith('video/')) {
+              videoCount++;
+            }
+          });
+          
+          // 更新UI
+          totalFiles.textContent = files.length;
+          totalStorage.textContent = formatFileSize(totalSize);
+          totalImages.textContent = imageCount;
+          totalVideos.textContent = videoCount;
+          
+          hideLoading();
+        } catch (error) {
+          console.error('Error loading user info:', error);
+          showAlert('加载用户信息失败，请重试', 'danger');
+          hideLoading();
+        }
+      }
+      
+      // 退出登录
+      function logout() {
+        sessionStorage.removeItem('adminLoggedIn');
+        sessionStorage.removeItem('adminAuth');
+        window.location.href = '/';
+      }
+      
+      // 显示加载状态
+      function showLoading() {
+        loading.style.display = 'block';
+      }
+      
+      // 隐藏加载状态
+      function hideLoading() {
+        loading.style.display = 'none';
+      }
+      
+      // 显示提示消息
+      function showAlert(message, type) {
+        userAlert.textContent = message;
+        userAlert.className = `alert alert-${type}`;
+        userAlert.style.display = 'block';
+        
+        // 5秒后自动隐藏
+        setTimeout(() => {
+          userAlert.style.display = 'none';
+        }, 5000);
+      }
+      
+      // 格式化文件大小
+      function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 字节';
+        const k = 1024;
+        const sizes = ['字节', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+    });
+  </script>
+</body>
+</html>
