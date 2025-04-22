@@ -557,47 +557,13 @@
           const img = document.createElement('img');
           img.src = e.target.result;
           img.alt = file.name;
-          img.style.maxHeight = '200px';
-          img.style.maxWidth = '100%';
-          img.style.borderRadius = '4px';
-          img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
           filePreview.appendChild(img);
-        }
-        reader.readAsDataURL(file);
-      } else if (file.type.startsWith('video/')) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const video = document.createElement('video');
-          video.src = e.target.result;
-          video.controls = true;
-          video.style.maxHeight = '200px';
-          video.style.maxWidth = '100%';
-          video.style.borderRadius = '4px';
-          filePreview.appendChild(video);
-        }
-        reader.readAsDataURL(file);
-      } else if (file.type.startsWith('audio/')) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const audio = document.createElement('audio');
-          audio.src = e.target.result;
-          audio.controls = true;
-          audio.style.width = '100%';
-          filePreview.appendChild(audio);
-          
-          // 添加音频图标
-          const audioIcon = document.createElement('div');
-          audioIcon.innerHTML = '<i class="fas fa-music" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 10px;"></i>';
-          filePreview.insertBefore(audioIcon, audio);
         }
         reader.readAsDataURL(file);
       } else {
         const iconClass = getFileTypeIconClass(file.type);
-        filePreview.innerHTML = `<i class="${iconClass}" style="font-size: 5rem; color: var(--primary-color);"></i>`;
+        filePreview.innerHTML = `<i class="${iconClass}" style="font-size: 5rem; color: var(--gray-text);"></i>`;
       }
-      
-      // 显示上传按钮
-      uploadBtn.style.display = 'block';
     }
     
     function getFileTypeIconClass(mimeType) {
@@ -617,5 +583,114 @@
         return 'fas fa-file-powerpoint';
       if (mimeType.includes('text/')) return 'fas fa-file-alt';
       
-      return 'fas fa-
-(Content truncated due to size limit. Use line ranges to read in chunks)
+      return 'fas fa-file';
+    }
+
+    function simulateProgress(callback) {
+      progressContainer.style.display = 'block';
+      let width = 0;
+      const interval = setInterval(() => {
+        if (width >= 90) {
+          clearInterval(interval);
+        } else {
+          width += 5;
+          progressBar.style.width = width + '%';
+        }
+      }, 150);
+      
+      return () => {
+        clearInterval(interval);
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+          callback();
+        }, 300);
+      };
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      if (!fileInput.files.length) {
+        alert('请先选择一个文件！');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+        
+        const completeProgress = simulateProgress(() => {
+          progressContainer.style.display = 'none';
+        });
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        
+        completeProgress();
+        
+        if (data.success) {
+          result.style.display = 'block';
+          resultContent.innerHTML = `
+            <div class="result-item">
+              <div class="result-label">文件名</div>
+              <div class="result-value">${data.fileName}</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">文件大小</div>
+              <div class="result-value">${formatFileSize(data.fileSize)}</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">查看文件</div>
+              <div class="result-value">
+                <a href="${data.url}" class="result-url" target="_blank">${data.url}</a>
+              </div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">复制链接</div>
+              <div class="result-value">
+                <div class="copy-field">
+                  <input type="text" class="copy-input" value="${data.url}" readonly>
+                  <button class="copy-btn" onclick="copyToClipboard('${data.url}')">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          fileInput.value = '';
+          selectedFileInfo.style.display = 'none';
+          filePreview.innerHTML = '';
+        } else {
+          throw new Error(data.error || '上传失败');
+        }
+      } catch (error) {
+        alert(`错误: ${error.message || '发生未知错误'}`);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> 上传';
+      }
+    });
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 字节';
+      const k = 1024;
+      const sizes = ['字节', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('链接已复制到剪贴板！');
+      }).catch(err => {
+        console.error('复制失败: ', err);
+      });
+    }
+  </script>
