@@ -1,0 +1,9 @@
+name = "uki0x_img_bed"
+compatibility_date = "2025-04-20"
+
+kv_namespaces = [
+  { binding = "FILE_STORE", id = "<YOUR_KV_ID>", preview_id = "<YOUR_PREVIEW_KV_ID>" }
+]
+
+[build]
+command = "npm install"

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uki0x 图床</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --primary-hover: #3a56d4;
+      --secondary-color: #f72585;
+      --light-bg: #f8f9fa;
+      --dark-text: #212529;
+      --gray-text: #6c757d;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --success-color: #4CAF50;
+      --success-hover: #43a047;
+      --danger-color: #f44336;
+      --danger-hover: #e53935;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    body {
+      background-color: var(--light-bg);
+      color: var(--dark-text);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    header {
+      background-color: white;
+      box-shadow: var(--card-shadow);
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo i {
+      margin-right: 10px;
+    }
+    
+    .nav-link {
+      color: var(--gray-text);
+      text-decoration: none;
+      margin-left: 20px;
+      transition: color 0.3s;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+    }
+    
+    .nav-link:hover {
+      color: var(--primary-color);
+    }
+    
+    .nav-link i {
+      margin-right: 5px;
+    }
+    
+    main {
+      padding: 40px 0;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: 700;
+      color: var(--dark-text);
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
+    .upload-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+      background-color: #f8fafc;
+    }
+    
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--primary-color);
+      background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    .upload-icon {
+      font-size: 3rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+    }
+    
+    .upload-text {
+      font-size: 1.2rem;
+      color: var(--gray-text);
+      margin-bottom: 10px;
+    }
+    
+    .upload-hint {
+      font-size: 0.9rem;
+      color: var(--gray-text);
+    }
+    
+    #file-input {
+      display: none;
+    }
+    
+    .selected-file {
+      margin: 15px 0;
+      padding: 15px;
+      background-color: #f0f4ff;
+      border-radius: 8px;
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .selected-file-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .selected-file-title {
+      font-weight: 600;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+    }
+    
+    .selected-file-title i {
+      margin-right: 8px;
+    }
+    
+    .selected-file-remove {
+      background: none;
+      border: none;
+      color: var(--gray-text);
+      cursor: pointer;
+      font-size: 1rem;
+      transition: color 0.2s;
+    }
+    
+    .selected-file-remove:hover {
+      color: var(--danger-color);
+    }
+    
+    .file-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .file-detail-item {
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--gray-text);
+    }
+    
+    .file-detail-item i {
+      margin-right: 5px;
+      width: 16px;
+      text-align: center;
+    }
+    
+    .file-preview {
+      margin-top: 15px;
+      text-align: center;
+    }
+    
+    .file-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .btn {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .btn:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-success {
+      background-color: var(--success-color);
+    }
+    
+    .btn-success:hover {
+      background-color: var(--success-hover);
+    }
+    
+    .btn-block {
+      display: block;
+      width: 100%;
+    }
+    
+    .progress-container {
+      margin: 20px 0;
+      display: none;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    
+    .result {
+      display: none;
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f8fafc;
+      border-radius: 8px;
+      border-left: 4px solid var(--success-color);
+    }
+    
+    .result-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: var(--success-color);
+      display: flex;
+      align-items: center;
+    }
+    
+    .result-title i {
+      margin-right: 8px;
+    }
+    
+    .result-item {
+      margin-bottom: 12px;
+    }
+    
+    .result-label {
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--dark-text);
+    }
+    
+    .result-value {
+      background-color: white;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
+      word-break: break-all;
+    }
+    
+    .result-url {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    
+    .result-url:hover {
+      text-decoration: underline;
+    }
+    
+    .copy-field {
+      display: flex;
+    }
+    
+    .copy-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #e9ecef;
+      border-right: none;
+      border-radius: 4px 0 0 4px;
+      font-size: 0.9rem;
+    }
+    
+    .copy-btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0 15px;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .copy-btn:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    footer {
+      text-align: center;
+      padding: 20px 0;
+      background-color: white;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .footer-text {
+      color: var(--gray-text);
+      font-size: 0.9rem;
+    }
+    
+    .footer-link {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+    
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Media Queries */
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .nav-link {
+        margin: 10px 0 0 0;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .section-title {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="fas fa-cloud-upload-alt"></i>
+        uki0x 图床
+      </a>
+      <a href="/dashboard" class="nav-link">
+        <i class="fas fa-tachometer-alt"></i> 管理面板
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1 class="section-title">文件上传</h1>
+      <div class="card">
+        <div class="upload-area" id="drop-area">
+          <div class="upload-icon">
+            <i class="fas fa-file-upload"></i>
+          </div>
+          <p class="upload-text">拖拽文件到这里</p>
+          <p class="upload-hint">或点击此处选择文件</p>
+          <input type="file" id="file-input">
+        </div>
+        
+        <!-- 新增: 选中文件信息展示区域 -->
+        <div class="selected-file" id="selected-file-info">
+          <div class="selected-file-header">
+            <div class="selected-file-title">
+              <i class="fas fa-file"></i> <span id="selected-file-name">文件名称</span>
+            </div>
+            <button class="selected-file-remove" id="remove-file">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="file-details">
+            <div class="file-detail-item">
+              <i class="fas fa-weight-hanging"></i> <span id="selected-file-size">大小</span>
+            </div>
+            <div class="file-detail-item">
+              <i class="fas fa-file-alt"></i> <span id="selected-file-type">类型</span>
+            </div>
+          </div>
+          <div class="file-preview" id="file-preview"></div>
+        </div>
+        
+        <div class="progress-container" id="progress-container">
+          <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+          </div>
+        </div>
+        
+        <button class="btn btn-block" id="upload-btn">
+          <i class="fas fa-upload"></i> 上传
+        </button>
+        
+        <div class="result" id="result">
+          <div class="result-title">
+            <i class="fas fa-check-circle"></i> 上传成功
+          </div>
+          <div class="result-content" id="result-content"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p class="footer-text">
+        由 CloudFlare Pages 和 Telegram 提供支持 | 
+        <a href="https://github.com/uki0xc/uki0x_img_bed" class="footer-link" target="_blank">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const result = document.getElementById('result');
+    const resultContent = document.getElementById('result-content');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress');
+    
+    const selectedFileInfo = document.getElementById('selected-file-info');
+    const selectedFileName = document.getElementById('selected-file-name');
+    const selectedFileSize = document.getElementById('selected-file-size');
+    const selectedFileType = document.getElementById('selected-file-type');
+    const filePreview = document.getElementById('file-preview');
+    const removeFileBtn = document.getElementById('remove-file');
+
+    dropArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropArea.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('dragover');
+      });
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        displayFileInfo(e.dataTransfer.files[0]); 
+      }
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        displayFileInfo(e.target.files[0]);
+      }
+    });
+    
+    removeFileBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      selectedFileInfo.style.display = 'none';
+      filePreview.innerHTML = '';
+    });
+    
+    function displayFileInfo(file) {
+      selectedFileName.textContent = file.name;
+      selectedFileSize.textContent = formatFileSize(file.size);
+      selectedFileType.textContent = file.type || '未知类型';
+      
+      selectedFileInfo.style.display = 'block';
+      
+      filePreview.innerHTML = '';
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = file.name;
+          filePreview.appendChild(img);
+        }
+        reader.readAsDataURL(file);
+      } else {
+        const iconClass = getFileTypeIconClass(file.type);
+        filePreview.innerHTML = `<i class="${iconClass}" style="font-size: 5rem; color: var(--gray-text);"></i>`;
+      }
+    }
+    
+    function getFileTypeIconClass(mimeType) {
+      if (!mimeType) return 'fas fa-file';
+      
+      if (mimeType.startsWith('image/')) return 'far fa-image';
+      if (mimeType.startsWith('video/')) return 'fas fa-film';
+      if (mimeType.startsWith('audio/')) return 'fas fa-music';
+      if (mimeType.includes('pdf')) return 'fas fa-file-pdf';
+      if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) 
+        return 'fas fa-file-archive';
+      if (mimeType.includes('word') || mimeType.includes('document')) 
+        return 'fas fa-file-word';
+      if (mimeType.includes('excel') || mimeType.includes('sheet')) 
+        return 'fas fa-file-excel';
+      if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) 
+        return 'fas fa-file-powerpoint';
+      if (mimeType.includes('text/')) return 'fas fa-file-alt';
+      
+      return 'fas fa-file';
+    }
+
+    function simulateProgress(callback) {
+      progressContainer.style.display = 'block';
+      let width = 0;
+      const interval = setInterval(() => {
+        if (width >= 90) {
+          clearInterval(interval);
+        } else {
+          width += 5;
+          progressBar.style.width = width + '%';
+        }
+      }, 150);
+      
+      return () => {
+        clearInterval(interval);
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+          callback();
+        }, 300);
+      };
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      if (!fileInput.files.length) {
+        alert('请先选择一个文件！');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+        
+        const completeProgress = simulateProgress(() => {
+          progressContainer.style.display = 'none';
+        });
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        
+        completeProgress();
+        
+        if (data.success) {
+          result.style.display = 'block';
+          resultContent.innerHTML = `
+            <div class="result-item">
+              <div class="result-label">文件名</div>
+              <div class="result-value">${data.fileName}</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">文件大小</div>
+              <div class="result-value">${formatFileSize(data.fileSize)}</div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">查看文件</div>
+              <div class="result-value">
+                <a href="${data.url}" class="result-url" target="_blank">${data.url}</a>
+              </div>
+            </div>
+            <div class="result-item">
+              <div class="result-label">复制链接</div>
+              <div class="result-value">
+                <div class="copy-field">
+                  <input type="text" class="copy-input" value="${data.url}" readonly>
+                  <button class="copy-btn" onclick="copyToClipboard('${data.url}')">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          fileInput.value = '';
+          selectedFileInfo.style.display = 'none';
+          filePreview.innerHTML = '';
+        } else {
+          throw new Error(data.error || '上传失败');
+        }
+      } catch (error) {
+        alert(`错误: ${error.message || '发生未知错误'}`);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> 上传';
+      }
+    });
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 字节';
+      const k = 1024;
+      const sizes = ['字节', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('链接已复制到剪贴板！');
+      }).catch(err => {
+        console.error('复制失败: ', err);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录 - uki0x 图床</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary-color: #f72585;
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+            --gray-text: #6c757d;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --success-color: #4CAF50;
+            --success-hover: #43a047;
+            --danger-color: #f44336;
+            --danger-hover: #e53935;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+            flex: 1;
+        }
+
+        header {
+            background-color: white;
+            box-shadow: var(--card-shadow);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 10px;
+        }
+
+        .nav-link {
+            color: var(--gray-text);
+            text-decoration: none;
+            margin-left: 20px;
+            transition: color 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-link i {
+            margin-right: 5px;
+        }
+
+        main {
+            padding: 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 700;
+            color: var(--dark-text);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-text);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray-text);
+            cursor: pointer;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-danger {
+            background-color: #ffebee;
+            color: var(--danger-color);
+            border: 1px solid #ffcdd2;
+        }
+
+        .alert-success {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border: 1px solid #c8e6c9;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            margin-top: auto;
+        }
+
+        .footer-text {
+            color: var(--gray-text);
+            font-size: 0.9rem;
+        }
+
+        .footer-link {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-link {
+                margin: 10px 0 0 0;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-container">
+        <a href="/" class="logo">
+            <i class="fas fa-cloud-upload-alt"></i>
+            uki0x 图床
+        </a>
+        <a href="/" class="nav-link">
+            <i class="fas fa-home"></i> 返回首页
+        </a>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+        <div class="card">
+            <h1 class="section-title">管理员登录</h1>
+
+            <div id="login-alert" class="alert alert-danger"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">用户名</label>
+                    <input type="text" id="username" class="form-input" placeholder="请输入用户名" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">密码</label>
+                    <div class="password-container">
+                        <input type="password" id="password" class="form-input" placeholder="请输入密码" required>
+                        <button type="button" class="toggle-password" id="toggle-password">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> 登录
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <p class="footer-text">
+            由 CloudFlare Pages 和 Telegram 提供支持 |
+            <a href="https://github.com/uki0xc/uki0x_img_bed" class="footer-link" target="_blank">
+                <i class="fab fa-github"></i> GitHub
+            </a>
+        </p>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('login-form');
+        const loginAlert = document.getElementById('login-alert');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+
+        // 切换密码可见性
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            // 切换图标
+            const icon = this.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        });
+
+        // 登录表单提交
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showAlert('请输入用户名和密码', 'danger');
+                return;
+            }
+
+            try {
+                // 检查是否存在已保存的管理员凭据
+                let adminCredentials = localStorage.getItem('adminCredentials');
+
+                // 如果没有保存的凭据，使用默认凭据
+                if (!adminCredentials) {
+                    // 默认用户名为 admin，密码为 admin
+                    adminCredentials = JSON.stringify({
+                        username: 'admin',
+                        password: 'admin'
+                    });
+                } else {
+                    adminCredentials = JSON.parse(adminCredentials);
+                }
+
+                // 验证凭据
+                if (username === adminCredentials.username && password === adminCredentials.password) {
+                    // 登录成功，设置会话
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+
+                    // 显示成功消息
+                    showAlert('登录成功，正在跳转...', 'success');
+
+                    // 跳转到管理面板
+                    setTimeout(() => {
+                        window.location.href = '/admin/dashboard.html';
+                    }, 1000);
+                } else {
+                    showAlert('用户名或密码错误', 'danger');
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                showAlert('登录失败，请重试', 'danger');
+            }
+        });
+
+        // 显示提示消息
+        function showAlert(message, type) {
+            loginAlert.textContent = message;
+            loginAlert.className = `alert alert-${type}`;
+            loginAlert.style.display = 'block';
+
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                loginAlert.style.display = 'none';
+            }, 5000);
+        }
+    });
+</script>
+</body>
+</html>
