@@ -68,19 +68,17 @@ export async function onRequest(context) {
 
   // 获取客户端IP地址
   const clientIP = request.headers.get('CF-Connecting-IP') ||
-      request.headers.get('X-Forwarded-For') ||
-      'unknown';
+    request.headers.get('X-Forwarded-For') ||
+    'unknown';
 
   // 根据文件类型选择合适的Telegram API
   const telegramFormData = new FormData();
   telegramFormData.append("chat_id", TG_CHAT_ID);
-
   let apiEndpoint = "sendDocument";
   let fileParamName = "document";
 
   // 检查文件类型
   const mimeType = file.type || '';
-
   if (mimeType.startsWith('video/')) {
     apiEndpoint = "sendVideo";
     fileParamName = "video";
@@ -102,22 +100,20 @@ export async function onRequest(context) {
 
   try {
     const telegramResponse = await fetch(
-        `https://api.telegram.org/bot${TG_BOT_TOKEN}/${apiEndpoint}`,
-        {
-          method: "POST",
-          body: telegramFormData,
-        }
+      `https://api.telegram.org/bot${TG_BOT_TOKEN}/${apiEndpoint}`,
+      {
+        method: "POST",
+        body: telegramFormData,
+      }
     );
 
     const telegramData = await telegramResponse.json();
-
     if (!telegramData.ok) {
       throw new Error(`Telegram API error: ${telegramData.description}`);
     }
 
     // 提取文件信息，根据不同的API响应结构获取文件信息
     let fileId, fileName, fileSize, fileMimeType, fileUniqueId;
-
     if (apiEndpoint === "sendVideo") {
       fileId = telegramData.result.video.file_id;
       fileName = telegramData.result.video.file_name || file.name;
@@ -160,7 +156,6 @@ export async function onRequest(context) {
       clientIP,
       fileType: apiEndpoint.replace('send', '').toLowerCase()
     };
-
     await env.FILE_STORE.put(fileUniqueId, JSON.stringify(metadata));
 
     // 生成随机字符串
@@ -172,8 +167,8 @@ export async function onRequest(context) {
       }
       return result;
     };
-    
-   // 提取文件扩展名的函数
+
+    // 提取文件扩展名的函数
     const getFileExtension = (filename) => {
       if (!filename) return '';
       return filename.split('.').pop().toLowerCase();
@@ -188,32 +183,32 @@ export async function onRequest(context) {
 
     // 返回完整的响应信息
     return new Response(
-        JSON.stringify({
-          success: true,
-          url: fileUrl,
-          fileName,
-          fileSize,
-          mimeType: fileMimeType,
-          fileType: apiEndpoint.replace('send', '').toLowerCase(),
-          fileUniqueId
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
+      JSON.stringify({
+        success: true,
+        url: fileUrl,
+        fileName,
+        fileSize,
+        mimeType: fileMimeType,
+        fileType: apiEndpoint.replace('send', '').toLowerCase(),
+        fileUniqueId
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   } catch (error) {
     return new Response(
-        JSON.stringify({ error: error.message || "Failed to upload file" }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
+      JSON.stringify({ error: error.message || "Failed to upload file" }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   }
 }
