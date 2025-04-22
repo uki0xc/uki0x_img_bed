@@ -669,7 +669,30 @@
       <!-- 管理面板部分 -->
       <div id="dashboard-section">
         <div id="dashboard-alert" class="alert"></div>
-        
+        <div class="loading" id="loading">
+           <i class="fas fa-spinner fa-spin"></i>
+           <p>加载中...</p>
+         </div>
+         
+         <div class="table-container">
+           <table id="files-table">
+             <thead>
+               <tr>
+                 <th class="checkbox-cell">
+                   <input type="checkbox" id="select-all">
+                 </th>
+                 <th class="file-type-cell">类型</th>
+                 <th>文件名</th>
+                 <th>大小</th>
+                 <th>上传时间</th>
+                 <th>上传IP</th>
+                 <th class="action-cell">操作</th>
+               </tr>
+             </thead>
+             <tbody id="files-list">
+               <!-- 文件列表将通过JavaScript动态生成 -->
+             </tbody>
+           </table>
         <div class="card">
           <div class="dashboard-header">
             <h1 class="section-title">
