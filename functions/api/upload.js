@@ -173,11 +173,18 @@ export async function onRequest(context) {
       return result;
     };
     
-    // 生成 URL，添加随机值避免重复
+   // 提取文件扩展名的函数
+    const getFileExtension = (filename) => {
+      if (!filename) return '';
+      return filename.split('.').pop().toLowerCase();
+    };
+
+    // 生成 URL，添加随机值避免重复，并包含文件扩展名
     const randomValue = generateRandomString(12); // 生成12位随机字符串
+    const fileExtension = getFileExtension(fileName);
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
-    const fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}`;
+    const fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
 
     // 返回完整的响应信息
     return new Response(
