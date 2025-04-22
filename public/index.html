@@ -418,8 +418,8 @@
         <i class="fas fa-cloud-upload-alt"></i>
         uki0x 图床
       </a>
-      <a href="/login.html" class="nav-link">
-        <i class="fas fa-user-shield"></i> 管理员登录
+      <a href="/dashboard" class="nav-link">
+        <i class="fas fa-tachometer-alt"></i> 管理面板
       </a>
     </div>
   </header>
@@ -436,9 +436,9 @@
           <p class="upload-hint">或点击此处选择文件</p>
           <input type="file" id="file-input">
         </div>
-        
+
         <!-- 新增: 选中文件信息展示区域 -->
-        <div class="selected-file" id="selected-file-info" style="display: none;">
+        <div class="selected-file" id="selected-file-info">
           <div class="selected-file-header">
             <div class="selected-file-title">
               <i class="fas fa-file"></i> <span id="selected-file-name">文件名称</span>
@@ -457,17 +457,17 @@
           </div>
           <div class="file-preview" id="file-preview"></div>
         </div>
-        
+
         <div class="progress-container" id="progress-container">
           <div class="progress-bar">
             <div class="progress" id="progress"></div>
           </div>
         </div>
-        
+
         <button class="btn btn-block" id="upload-btn">
           <i class="fas fa-upload"></i> 上传
         </button>
-        
+
         <div class="result" id="result">
           <div class="result-title">
             <i class="fas fa-check-circle"></i> 上传成功
