@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('login-error');
   const refreshBtn = document.getElementById('refresh-btn');
   const logoutBtn = document.getElementById('logout-btn');
-  const fileList = document.getElementById('files-list');
+  const fileList = document.getElementById('files-list'); // 修改：file-list -> files-list
   const directoryPath = document.getElementById('directory-path');
   
   // 检查登录状态
@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       const data = await response.json();
+      console.log('API返回数据:', data); // 添加调试信息
       
       // 更新当前目录
       currentDirectory = directory;
