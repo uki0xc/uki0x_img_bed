@@ -172,7 +172,7 @@ export async function onRequest(context) {
     return new Response(
         JSON.stringify({
           success: true,
-          src: fileUrl,
+          url: fileUrl,
           fileName,
           fileSize,
           mimeType: fileMimeType,
