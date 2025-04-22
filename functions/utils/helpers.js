@@ -15,13 +15,13 @@ export function getRandomId(length = 8) {
  */
 export function formatFileSize(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
-
+  
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-
+  
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
+  
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
@@ -30,9 +30,9 @@ export function formatFileSize(bytes, decimals = 2) {
  */
 export function getFileIcon(filename) {
   if (!filename) return '📄';
-
+  
   const ext = filename.split('.').pop().toLowerCase();
-
+  
   const iconMap = {
     // 图片文件
     'jpg': '🖼️',
@@ -48,7 +48,7 @@ export function getFileIcon(filename) {
     'heic': '🖼️',
     'heif': '🖼️',
     'avif': '🖼️',
-
+    
     // 视频文件
     'mp4': '🎬',
     'avi': '🎬',
@@ -62,7 +62,7 @@ export function getFileIcon(filename) {
     'mpeg': '🎬',
     'mpg': '🎬',
     'ts': '🎬',
-
+    
     // 音频文件
     'mp3': '🎵',
     'wav': '🎵',
@@ -74,7 +74,7 @@ export function getFileIcon(filename) {
     'opus': '🎵',
     'mid': '🎵',
     'midi': '🎵',
-
+    
     // 文档文件
     'pdf': '📄',
     'doc': '📝',
@@ -93,7 +93,7 @@ export function getFileIcon(filename) {
     'htm': '🌐',
     'css': '🌐',
     'js': '📜',
-
+    
     // 压缩文件
     'zip': '🗜️',
     'rar': '🗜️',
@@ -102,7 +102,7 @@ export function getFileIcon(filename) {
     'gz': '🗜️',
     'bz2': '🗜️',
     'xz': '🗜️',
-
+    
     // 可执行文件
     'exe': '⚙️',
     'msi': '⚙️',
@@ -110,14 +110,14 @@ export function getFileIcon(filename) {
     'app': '📱',
     'dmg': '💿',
     'iso': '💿',
-
+    
     // 字体文件
     'ttf': '🔤',
     'otf': '🔤',
     'woff': '🔤',
     'woff2': '🔤',
     'eot': '🔤',
-
+    
     // 3D和设计文件
     'obj': '🎮',
     'fbx': '🎮',
@@ -128,7 +128,7 @@ export function getFileIcon(filename) {
     'eps': '🎨',
     'sketch': '🎨',
     'fig': '🎨',
-
+    
     // 其他常见文件
     'torrent': '🔗',
     'srt': '🗣️',
@@ -136,7 +136,7 @@ export function getFileIcon(filename) {
     'ass': '🗣️',
     'ssa': '🗣️'
   };
-
+  
   return iconMap[ext] || '📄';
 }
 
@@ -145,7 +145,7 @@ export function getFileIcon(filename) {
  */
 export function getFileIconByMimeType(mimeType) {
   if (!mimeType) return '📄';
-
+  
   if (mimeType.startsWith('image/')) return '🖼️';
   if (mimeType.startsWith('video/')) return '🎬';
   if (mimeType.startsWith('audio/')) return '🎵';
@@ -156,7 +156,7 @@ export function getFileIconByMimeType(mimeType) {
   if (mimeType.includes('text/')) return '📝';
   if (mimeType.includes('zip') || mimeType.includes('compressed')) return '🗜️';
   if (mimeType.includes('html')) return '🌐';
-
+  
   return '📄';
 }
 
@@ -165,17 +165,17 @@ export function getFileIconByMimeType(mimeType) {
  */
 export function formatDate(dateString) {
   if (!dateString) return '';
-
+  
   const date = new Date(dateString);
-
+  
   if (isNaN(date.getTime())) return '';
-
+  
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
-
+  
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
@@ -184,7 +184,7 @@ export function formatDate(dateString) {
  */
 export function getFileCategory(mimeType, fileName) {
   if (!mimeType && !fileName) return 'other';
-
+  
   if (mimeType) {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
@@ -197,45 +197,45 @@ export function getFileCategory(mimeType, fileName) {
     if (mimeType.includes('zip') || mimeType.includes('compressed')) return 'archive';
     if (mimeType.includes('html')) return 'web';
   }
-
+  
   if (fileName) {
     const ext = fileName.split('.').pop().toLowerCase();
-
+    
     // 图片文件
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'tif', 'ico', 'heic', 'heif', 'avif'].includes(ext)) {
       return 'image';
     }
-
+    
     // 视频文件
     if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', 'm4v', '3gp', 'mpeg', 'mpg', 'ts'].includes(ext)) {
       return 'video';
     }
-
+    
     // 音频文件
     if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'mid', 'midi'].includes(ext)) {
       return 'audio';
     }
-
+    
     // 文档文件
     if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'md', 'csv', 'json', 'xml'].includes(ext)) {
       return 'document';
     }
-
+    
     // 压缩文件
     if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz'].includes(ext)) {
       return 'archive';
     }
-
+    
     // 可执行文件
     if (['exe', 'msi', 'apk', 'app', 'dmg', 'iso'].includes(ext)) {
       return 'executable';
     }
-
+    
     // 网页文件
     if (['html', 'htm', 'css', 'js'].includes(ext)) {
       return 'web';
     }
   }
-
+  
   return 'other';
 }
