@@ -7,12 +7,12 @@ export async function onRequest(context) {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
     });
   }
 
-  // Check if it's a POST request
+  // 检查是否为 POST 请求
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -23,11 +23,46 @@ export async function onRequest(context) {
     });
   }
 
+  // 检查认证信息
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "WWW-Authenticate": "Basic realm=\"Admin Area\""
+      },
+    });
+  }
+
+  // 解析认证信息
+  const base64Credentials = authHeader.split(' ')[1];
+  const credentials = atob(base64Credentials);
+  const [username, password] = credentials.split(':');
+
+  // 从环境变量获取正确的用户名和密码
+  const basicUser = env.BASIC_USER;
+  const basicPass = env.BASIC_PASS;
+
+  // 验证用户名和密码
+  if (username !== basicUser || password !== basicPass) {
+    return new Response(JSON.stringify({ error: "Invalid credentials" }), {
+      status: 401,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  }
+
   try {
-    const { fileUniqueId } = await request.json();
-    
-    if (!fileUniqueId) {
-      return new Response(JSON.stringify({ error: "Missing fileUniqueId" }), {
+    // 获取请求体
+    const requestData = await request.json();
+    const fileIds = requestData.fileIds || [];
+
+    if (!Array.isArray(fileIds) || fileIds.length === 0) {
+      return new Response(JSON.stringify({ error: "No file IDs provided" }), {
         status: 400,
         headers: {
           "Content-Type": "application/json",
@@ -36,60 +71,27 @@ export async function onRequest(context) {
       });
     }
 
-    // Check if file exists
-    const fileMetadata = await env.FILE_STORE.get(fileUniqueId);
-    if (!fileMetadata) {
-      return new Response(JSON.stringify({ error: "File not found" }), {
-        status: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
+    // 删除文件
+    const deletePromises = fileIds.map(fileId => env.FILE_STORE.delete(fileId));
+    await Promise.all(deletePromises);
 
-    // Delete from KV store
-    await env.FILE_STORE.delete(fileUniqueId);
-
-    // Purge cache if CF API credentials are available
-    if (env.CF_API_KEY && env.CF_EMAIL && env.CF_ZONE_ID) {
-      try {
-        const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
-        const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
-        const fileUrl = `${urlPrefix}${fileUniqueId}`;
-        
-        await fetch(`https://api.cloudflare.com/client/v4/zones/${env.CF_ZONE_ID}/purge_cache`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Auth-Email': env.CF_EMAIL,
-            'X-Auth-Key': env.CF_API_KEY,
-          },
-          body: JSON.stringify({
-            files: [fileUrl],
-          }),
-        });
-      } catch (cacheError) {
-        console.error("Failed to purge cache:", cacheError);
-      }
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({
+      success: true,
+      deletedCount: fileIds.length,
+      message: `Successfully deleted ${fileIds.length} files`
+    }), {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message || "Failed to delete file" }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message || "Failed to delete files" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   }
 }
