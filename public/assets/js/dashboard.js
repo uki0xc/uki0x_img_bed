@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileList = document.getElementById('files-list');
   const directoryPath = document.getElementById('directory-path');
   const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+  const loadingIndicator = document.getElementById('loading');
+  const noFilesMessage = document.getElementById('no-files');
   
   // 存储选中的文件ID
   let selectedFiles = [];
@@ -125,7 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 加载文件列表
   async function loadFiles(directory) {
     try {
-      fileList.innerHTML = '<p>正在加载文件...</p>';
+      // 显示加载指示器
+      loadingIndicator.style.display = 'block';
+      fileList.innerHTML = '';
+      noFilesMessage.style.display = 'none';
       
       // 重置选中的文件
       selectedFiles = [];
@@ -145,10 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // 更新面包屑导航
       updateBreadcrumb(directory);
       
+      // 隐藏加载指示器
+      loadingIndicator.style.display = 'none';
+      
       // 渲染文件列表
-      renderFileList(data);
+      if (data.success && data.files && data.files.length > 0) {
+        renderFileList(data);
+      } else {
+        noFilesMessage.style.display = 'block';
+      }
     } catch (error) {
       console.error('加载文件失败:', error);
+      loadingIndicator.style.display = 'none';
       fileList.innerHTML = '<p>加载文件列表失败，请重试</p>';
     }
   }
@@ -191,66 +204,115 @@ document.addEventListener('DOMContentLoaded', () => {
   // 渲染文件列表
   function renderFileList(data) {
     if (!data.files || data.files.length === 0) {
-      fileList.innerHTML = '<p>当前目录没有文件</p>';
+      noFilesMessage.style.display = 'block';
       return;
     }
     
-    const grid = document.createElement('div');
-    grid.className = 'file-grid';
+    // 创建表格视图
+    const table = document.createElement('table');
+    table.className = 'file-table';
     
+    // 创建表头
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th class="checkbox-cell">
+          <input type="checkbox" id="select-all">
+        </th>
+        <th class="file-type-cell">类型</th>
+        <th>文件名</th>
+        <th>大小</th>
+        <th>上传时间</th>
+        <th>上传IP</th>
+        <th class="action-cell">操作</th>
+      </tr>
+    `;
+    table.appendChild(thead);
+    
+    // 创建表格主体
+    const tbody = document.createElement('tbody');
+    
+    // 添加文件行
     data.files.forEach(file => {
-      const card = document.createElement('div');
-      card.className = 'file-card';
+      const tr = document.createElement('tr');
       
       // 区分目录和文件
       if (file.type === 'directory') {
-        // 目录卡片
-        card.innerHTML = `
-          <div class="file-details">
-            <div class="file-name">📁 ${file.name}</div>
-            <div class="file-actions">
-              <button class="btn-primary btn-sm open-dir" data-path="${currentDirectory ? currentDirectory + '/' + file.name : file.name}">打开</button>
-              <button class="btn-danger btn-sm delete-dir" data-path="${currentDirectory ? currentDirectory + '/' + file.name : file.name}">删除</button>
-            </div>
-          </div>
+        // 目录行
+        tr.innerHTML = `
+          <td class="checkbox-cell"></td>
+          <td class="file-type-cell"><i class="fas fa-folder"></i></td>
+          <td class="file-name">${file.name}</td>
+          <td class="file-size">-</td>
+          <td class="file-date">-</td>
+          <td class="file-ip">-</td>
+          <td class="action-cell">
+            <button class="action-btn open-dir" data-path="${currentDirectory ? currentDirectory + '/' + file.name : file.name}" title="打开">
+              <i class="fas fa-folder-open"></i>
+            </button>
+            <button class="action-btn delete delete-dir" data-path="${currentDirectory ? currentDirectory + '/' + file.name : file.name}" title="删除">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
         `;
       } else {
-        // 文件卡片 - 添加多选框
+        // 文件行
         const isImage = file.mimeType && file.mimeType.startsWith('image/');
+        const fileIcon = isImage ? 'far fa-image' : (file.fileType || 'fas fa-file');
         
-        // 构建文件信息HTML
-        let fileInfoHtml = '';
-        if (file.size) {
-          fileInfoHtml += `<div class="file-info">大小: ${file.size}</div>`;
-        }
-        if (file.uploadTime && file.uploadTime !== '-') {
-          fileInfoHtml += `<div class="file-info">上传时间: ${file.uploadTime}</div>`;
-        }
-        if (file.uploadIP && file.uploadIP !== '未知' && file.uploadIP !== '-') {
-          fileInfoHtml += `<div class="file-info">上传IP: ${file.uploadIP}</div>`;
-        }
-        
-        card.innerHTML = `
-          <div class="file-checkbox">
+        tr.innerHTML = `
+          <td class="checkbox-cell">
             <input type="checkbox" class="file-select" data-id="${file.id}">
-          </div>
-          <img src="${file.url}" alt="${file.name}" class="file-thumbnail">
-          <div class="file-details">
-            <div class="file-name">${file.name}</div>
-            ${fileInfoHtml}
-            <div class="file-actions">
-              <button class="btn-primary btn-sm copy-url" data-url="${file.url}">复制链接</button>
-              <button class="btn-danger btn-sm delete-file" data-id="${file.id}">删除</button>
-            </div>
-          </div>
+          </td>
+          <td class="file-type-cell"><i class="${fileIcon}"></i></td>
+          <td class="file-name">${file.name}</td>
+          <td class="file-size">${file.size || '-'}</td>
+          <td class="file-date">${file.uploadTime || '-'}</td>
+          <td class="file-ip">${file.uploadIP || '-'}</td>
+          <td class="action-cell">
+            <button class="action-btn copy-url" data-url="${file.url}" title="复制链接">
+              <i class="fas fa-copy"></i>
+            </button>
+            <button class="action-btn delete delete-file" data-id="${file.id}" title="删除">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
         `;
       }
       
-      grid.appendChild(card);
+      tbody.appendChild(tr);
     });
     
+    table.appendChild(tbody);
+    
+    // 添加到文件列表
     fileList.innerHTML = '';
-    fileList.appendChild(grid);
+    fileList.appendChild(table);
+    
+    // 添加全选事件处理
+    const selectAllCheckbox = document.getElementById('select-all');
+    if (selectAllCheckbox) {
+      selectAllCheckbox.addEventListener('change', () => {
+        const checkboxes = document.querySelectorAll('.file-select');
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = selectAllCheckbox.checked;
+          
+          const fileId = checkbox.dataset.id;
+          if (selectAllCheckbox.checked) {
+            // 添加到选中列表
+            if (!selectedFiles.includes(fileId)) {
+              selectedFiles.push(fileId);
+            }
+          } else {
+            // 清空选中列表
+            selectedFiles = [];
+          }
+        });
+        
+        // 更新删除按钮状态
+        updateDeleteSelectedButton();
+      });
+    }
     
     // 添加事件处理
     document.querySelectorAll('.open-dir').forEach(btn => {
@@ -270,9 +332,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.copy-url').forEach(btn => {
       btn.addEventListener('click', () => {
         copyToClipboard(btn.dataset.url);
-        btn.textContent = '已复制!';
+        btn.innerHTML = '<i class="fas fa-check"></i>';
         setTimeout(() => {
-          btn.textContent = '复制链接';
+          btn.innerHTML = '<i class="fas fa-copy"></i>';
         }, 2000);
       });
     });
