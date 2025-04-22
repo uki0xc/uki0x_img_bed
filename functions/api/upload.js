@@ -17,7 +17,7 @@ export async function onRequest(context) {
   const pathSegments = url.pathname.split('/');
   const lastSegment = pathSegments[pathSegments.length - 1];
   
-  if (lastSegment !== "upload") {
+  if (lastSegment !== "/api/upload") {
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: {
