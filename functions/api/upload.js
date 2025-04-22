@@ -104,6 +104,13 @@ export async function onRequest(context) {
       }
     );
 
+    // 首先检查响应状态
+    if (!telegramResponse.ok) {
+      const errorText = await telegramResponse.text();
+      throw new Error(`Telegram API error: ${errorText}`);
+    }
+
+    // 解析响应为JSON
     const telegramData = await telegramResponse.json();
     if (!telegramData.ok) {
       throw new Error(`Telegram API error: ${telegramData.description}`);
@@ -153,7 +160,10 @@ export async function onRequest(context) {
       clientIP,
       fileType: apiEndpoint.replace('send', '').toLowerCase()
     };
-    await env.FILE_STORE.put(fileUniqueId, JSON.stringify(metadata));
+    
+    // 确保metadata是一个有效的JSON对象
+    const metadataString = JSON.stringify(metadata);
+    await env.FILE_STORE.put(fileUniqueId, metadataString);
 
     // 修改后的随机字符串生成函数 - 生成12位随机字符
     const generateRandomString = (length) => {
@@ -176,10 +186,9 @@ export async function onRequest(context) {
     // 修改URL构建方式，确保正确的路径格式
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
-    // 使用fileUniqueId作为标识符，但在URL中只显示随机名称
     const fileUrl = `${urlPrefix}${randomValue}`;
     
-    // 将fileUniqueId和randomValue的映射关系存储到KV中，以便后续查找
+    // 将fileUniqueId作为字符串存储，而不是尝试解析它
     await env.FILE_STORE.put(randomValue, fileUniqueId);
 
     // 返回完整的响应信息
