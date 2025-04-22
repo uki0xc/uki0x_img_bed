@@ -19,13 +19,13 @@ export async function onRequest(context) {
 
     for (const key of keys.keys) {
       const metadataStr = await env.FILE_STORE.get(key.name);
-
+      
       if (metadataStr) {
         try {
           const metadata = JSON.parse(metadataStr);
           const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
           const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
-
+          
           files.push({
             fileUniqueId: key.name,
             fileName: metadata.fileName || 'unknown',
@@ -42,9 +42,9 @@ export async function onRequest(context) {
       }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      files
+    return new Response(JSON.stringify({ 
+      success: true, 
+      files 
     }), {
       headers: {
         "Content-Type": "application/json",
@@ -53,17 +53,17 @@ export async function onRequest(context) {
     });
   } catch (error) {
     return new Response(
-        JSON.stringify({
-          success: false,
-          error: error.message || "Failed to list files"
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || "Failed to list files" 
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   }
 }
