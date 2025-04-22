@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 当前目录
   let currentDirectory = '';
   
+  // 创建预览模态框
+  createPreviewModal();
+  
   // 检查认证状态
   async function checkAuthStatus() {
     try {
@@ -298,7 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         // 文件行
         const isImage = file.mimeType && file.mimeType.startsWith('image/');
-        const fileIcon = isImage ? 'far fa-image' : (file.fileType || 'fas fa-file');
+        const isVideo = file.mimeType && file.mimeType.startsWith('video/');
+        const isAudio = file.mimeType && file.mimeType.startsWith('audio/');
+        const fileIcon = isImage ? 'far fa-image' : (isVideo ? 'fas fa-film' : (isAudio ? 'fas fa-music' : (file.fileType || 'fas fa-file')));
+        
+        // 添加预览按钮
+        const previewBtn = isImage || isVideo || isAudio ? 
+          `<button class="action-btn preview-file" data-url="${file.url}" data-type="${file.mimeType}" data-name="${file.name}" title="预览">
+            <i class="fas fa-eye"></i>
+          </button>` : '';
         
         tr.innerHTML = `
           <td class="checkbox-cell">
@@ -310,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="file-date">${file.uploadTime || '-'}</td>
           <td class="file-ip">${file.uploadIP || '-'}</td>
           <td class="action-cell">
+            ${previewBtn}
             <button class="action-btn copy-url" data-url="${file.url}" title="复制链接">
               <i class="fas fa-copy"></i>
             </button>
@@ -387,6 +399,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
     
+    // 添加预览按钮事件处理
+    document.querySelectorAll('.preview-file').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showFilePreview(btn.dataset.url, btn.dataset.type, btn.dataset.name);
+      });
+    });
+    
     // 添加多选框事件处理
     document.querySelectorAll('.file-select').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
@@ -408,6 +427,221 @@ document.addEventListener('DOMContentLoaded', () => {
         // 更新删除按钮状态
         updateDeleteSelectedButton();
       });
+    });
+  }
+  
+  // 创建预览模态框
+  function createPreviewModal() {
+    // 检查是否已存在预览模态框
+    if (document.getElementById('preview-modal')) {
+      return;
+    }
+    
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.id = 'preview-modal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">文件预览</h2>
+          <button class="modal-close" id="preview-close">&times;</button>
+        </div>
+        <div class="modal-body" id="preview-content">
+          <!-- 预览内容将在这里动态生成 -->
+        </div>
+      </div>
+    `;
+    
+    // 添加到body
+    document.body.appendChild(modal);
+    
+    // 添加关闭按钮事件
+    document.getElementById('preview-close').addEventListener('click', () => {
+      closePreview();
+    });
+    
+    // 点击模态框外部关闭
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closePreview();
+      }
+    });
+    
+    // 添加ESC键关闭
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display === 'flex') {
+        closePreview();
+      }
+    });
+    
+    // 添加模态框样式
+    const style = document.createElement('style');
+    style.textContent = `
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .modal-content {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: auto;
+        position: relative;
+      }
+      
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+      }
+      
+      .modal-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        cursor: pointer;
+        color: #666;
+      }
+      
+      .modal-close:hover {
+        color: #f44336;
+      }
+      
+      .modal-body {
+        padding: 20px;
+        text-align: center;
+      }
+      
+      .preview-image {
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 4px;
+      }
+      
+      .preview-video {
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 4px;
+      }
+      
+      .preview-audio {
+        width: 100%;
+        margin: 20px 0;
+      }
+      
+      .preview-error {
+        color: #f44336;
+        font-size: 1.2rem;
+        margin: 20px 0;
+      }
+      
+      .preview-loading {
+        font-size: 2rem;
+        color: #4361ee;
+        margin: 20px 0;
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+  
+  // 显示文件预览
+  function showFilePreview(url, type, name) {
+    const modal = document.getElementById('preview-modal');
+    const previewContent = document.getElementById('preview-content');
+    
+    // 设置模态框标题
+    document.querySelector('.modal-title').textContent = `预览: ${name}`;
+    
+    // 清空预览内容
+    previewContent.innerHTML = '<div class="preview-loading"><i class="fas fa-spinner fa-spin"></i></div>';
+    
+    // 显示模态框
+    modal.style.display = 'flex';
+    
+    // 根据文件类型生成预览内容
+    if (type && type.startsWith('image/')) {
+      // 图片预览
+      const img = document.createElement('img');
+      img.className = 'preview-image';
+      img.alt = name;
+      img.onload = () => {
+        previewContent.innerHTML = '';
+        previewContent.appendChild(img);
+      };
+      img.onerror = () => {
+        previewContent.innerHTML = `<div class="preview-error">图片加载失败</div>`;
+      };
+      img.src = url;
+    } else if (type && type.startsWith('video/')) {
+      // 视频预览
+      previewContent.innerHTML = `
+        <video class="preview-video" controls>
+          <source src="${url}" type="${type}">
+          您的浏览器不支持视频预览
+        </video>
+      `;
+    } else if (type && type.startsWith('audio/')) {
+      // 音频预览
+      previewContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+          <i class="fas fa-music" style="font-size: 48px; color: #4361ee;"></i>
+        </div>
+        <audio class="preview-audio" controls>
+          <source src="${url}" type="${type}">
+          您的浏览器不支持音频预览
+        </audio>
+      `;
+    } else {
+      // 其他文件类型
+      previewContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+          <i class="fas fa-file" style="font-size: 48px; color: #4361ee;"></i>
+        </div>
+        <p>此文件类型无法直接预览</p>
+        <a href="${url}" target="_blank" class="btn" style="display: inline-block; margin-top: 15px;">
+          <i class="fas fa-external-link-alt"></i> 在新窗口打开
+        </a>
+      `;
+    }
+  }
+  
+  // 关闭预览
+  function closePreview() {
+    const modal = document.getElementById('preview-modal');
+    modal.style.display = 'none';
+    
+    // 停止可能正在播放的媒体
+    const videos = document.querySelectorAll('.preview-video');
+    const audios = document.querySelectorAll('.preview-audio');
+    
+    videos.forEach(video => {
+      video.pause();
+    });
+    
+    audios.forEach(audio => {
+      audio.pause();
     });
   }
   
