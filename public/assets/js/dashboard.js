@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('login-error');
   const refreshBtn = document.getElementById('refresh-btn');
   const logoutBtn = document.getElementById('logout-btn');
-  const fileList = document.getElementById('file-list');
+  const fileList = document.getElementById('files-list');
   const directoryPath = document.getElementById('directory-path');
   
   // 检查登录状态
