@@ -56,6 +56,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // 检查认证状态
   async function checkAuthStatus() {
     try {
+      // 首先检查localStorage中是否有保存的认证信息
+      const savedAuth = localStorage.getItem('adminAuth');
+      
+      if (savedAuth) {
+        // 使用保存的认证信息进行验证
+        const response = await fetch('/api/images?auth_check=true', {
+          headers: {
+            'Authorization': 'Basic ' + savedAuth
+          }
+        });
+        
+        if (response.ok) {
+          // 认证有效，显示管理面板
+          loginSection.style.display = 'none';
+          dashboardSection.style.display = 'block';
+          // 加载文件列表
+          loadFiles(currentDirectory);
+          return;
+        } else {
+          // 认证无效，清除保存的认证信息
+          localStorage.removeItem('adminAuth');
+        }
+      }
+      
+      // 如果没有保存的认证信息或认证无效，尝试常规检查
       const response = await fetch('/api/images?auth_check=true');
       if (response.ok) {
         // 已登录，显示管理面板
@@ -85,16 +110,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     try {
+      const authString = btoa(username + ':' + password);
+      
       const response = await fetch('/api/images?auth=true', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + btoa(username + ':' + password)
+          'Authorization': 'Basic ' + authString
         }
       });
       
       if (response.ok) {
-        // 登录成功
+        // 登录成功，保存认证信息到localStorage
+        localStorage.setItem('adminAuth', authString);
+        
+        // 显示管理面板
         loginSection.style.display = 'none';
         dashboardSection.style.display = 'block';
         // 加载文件列表
@@ -111,7 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 登出处理
   function logout() {
-    // 清除认证状态
+    // 清除本地存储的认证信息
+    localStorage.removeItem('adminAuth');
+    
+    // 清除服务器端认证状态
     fetch('/api/images?logout=true')
       .then(() => {
         // 显示登录界面
@@ -136,7 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedFiles = [];
       updateDeleteSelectedButton();
       
-      const response = await fetch(`/api/images?directory=${encodeURIComponent(directory)}`);
+      // 获取认证信息
+      const savedAuth = localStorage.getItem('adminAuth');
+      const headers = savedAuth ? { 'Authorization': 'Basic ' + savedAuth } : {};
+      
+      const response = await fetch(`/api/images?directory=${encodeURIComponent(directory)}`, {
+        headers: headers
+      });
+      
       if (!response.ok) {
         throw new Error('加载文件列表失败');
       }
@@ -391,13 +431,21 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteSelectedBtn.disabled = true;
       deleteSelectedBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 删除中...';
       
+      // 获取认证信息
+      const savedAuth = localStorage.getItem('adminAuth');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (savedAuth) {
+        headers['Authorization'] = 'Basic ' + savedAuth;
+      }
+      
       // 逐个删除文件
       const promises = selectedFiles.map(fileId => 
         fetch('/api/images', {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: headers,
           body: JSON.stringify({
             fileId: fileId
           })
@@ -422,11 +470,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // 删除目录
   async function deleteDirectory(path) {
     try {
+      // 获取认证信息
+      const savedAuth = localStorage.getItem('adminAuth');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (savedAuth) {
+        headers['Authorization'] = 'Basic ' + savedAuth;
+      }
+      
       const response = await fetch('/api/images', {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify({
           directory: path
         })
@@ -447,11 +503,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // 删除文件
   async function deleteFile(fileId) {
     try {
+      // 获取认证信息
+      const savedAuth = localStorage.getItem('adminAuth');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (savedAuth) {
+        headers['Authorization'] = 'Basic ' + savedAuth;
+      }
+      
       const response = await fetch('/api/images', {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify({
           fileId: fileId
         })
