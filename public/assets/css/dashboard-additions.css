@@ -1,58 +1,125 @@
-/* 添加文件卡片中多选框的样式 */
-.file-checkbox {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-  background-color: rgba(255, 255, 255, 0.7);
-  border-radius: 4px;
-  padding: 3px;
+/* 表格样式增强 */
+.file-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
 }
 
-.file-checkbox input[type="checkbox"] {
+.file-table th,
+.file-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.file-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: var(--dark-text);
+}
+
+.file-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.file-table .checkbox-cell {
+  width: 40px;
+  text-align: center;
+}
+
+.file-table .file-type-cell {
+  width: 60px;
+  text-align: center;
+}
+
+.file-table .file-type-cell i {
+  font-size: 1.2rem;
+}
+
+.file-table .file-name {
+  font-weight: 500;
+  color: var(--dark-text);
+}
+
+.file-table .file-size,
+.file-table .file-date,
+.file-table .file-ip {
+  color: var(--gray-text);
+  font-size: 0.9rem;
+}
+
+.file-table .action-cell {
+  width: 100px;
+  text-align: right;
+}
+
+/* 加载指示器样式增强 */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 30px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.loading i {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+/* 无文件提示样式增强 */
+.no-files {
+  text-align: center;
+  padding: 50px 0;
+  color: var(--gray-text);
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.no-files i {
+  font-size: 3.5rem;
+  margin-bottom: 15px;
+  opacity: 0.6;
+  color: var(--primary-color);
+}
+
+.no-files p {
+  font-size: 1.2rem;
+}
+
+/* 全选复选框样式 */
+#select-all {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.file-card {
-  position: relative;
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .file-table .file-ip,
+  .file-table .file-date {
+    display: none;
+  }
+  
+  .file-table th,
+  .file-table td {
+    padding: 8px 10px;
+  }
+  
+  .file-table .action-cell {
+    width: 80px;
+  }
 }
 
-.file-info {
-  font-size: 0.85rem;
-  color: var(--gray-text);
-  margin-bottom: 5px;
-}
-
-/* 选中状态的文件卡片 */
-.file-card.selected {
-  box-shadow: 0 0 0 2px var(--primary-color);
-}
-
-/* 批量操作工具栏 */
-.batch-actions {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-}
-
-.batch-actions .select-all {
-  margin-right: 15px;
-  display: flex;
-  align-items: center;
-}
-
-.batch-actions .select-all input {
-  margin-right: 5px;
-}
-
-.batch-actions .action-count {
-  margin-left: auto;
-  font-size: 0.9rem;
-  color: var(--gray-text);
+@media (max-width: 576px) {
+  .file-table .file-size {
+    display: none;
+  }
+  
+  .file-table .action-cell {
+    width: 60px;
+  }
 }
