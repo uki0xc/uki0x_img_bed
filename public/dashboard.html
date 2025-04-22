@@ -701,10 +701,11 @@
       let searchQuery = '';
       
       // 初始化
-      loadFiles();
-      
-      // 事件监听器
-      selectAll.addEventListener('change', handleSelectAll);
-      deleteSelectedBtn.addEventListener('click', showDeleteModal);
-      refreshBtn.addEventListener('click', loa
+      document.addEventListener('DOMContentLoaded', function() {
+        // 检查登录状态
+        if (!sessionStorage.getItem('adminLoggedIn')) {
+          window.location.href = '/login.html';
+          return;
+        }
+ 
 (Content truncated due to size limit. Use line ranges to read in chunks)
