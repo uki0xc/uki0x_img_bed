@@ -177,7 +177,7 @@ export async function onRequest(context) {
     const randomValue = generateRandomString(12); // 生成12位随机字符串
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
-    const fileUrl = `${urlPrefix}_${randomValue}`;
+    const fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}`;
 
     // 返回完整的响应信息
     return new Response(
