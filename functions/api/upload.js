@@ -38,7 +38,7 @@ export async function onRequest(context) {
   // 获取表单数据
   const formData = await request.formData();
   const file = formData.get("file");
-  
+
   if (!file) {
     return new Response(JSON.stringify({ error: "No file provided" }), {
       status: 400,
@@ -52,7 +52,7 @@ export async function onRequest(context) {
   // 准备 Telegram API 设置
   const TG_BOT_TOKEN = env.TG_BOT_TOKEN;
   const TG_CHAT_ID = env.TG_CHAT_ID;
-  
+
   if (!TG_BOT_TOKEN || !TG_CHAT_ID) {
     return new Response(JSON.stringify({ error: "Missing Telegram configuration" }), {
       status: 500,
@@ -64,20 +64,20 @@ export async function onRequest(context) {
   }
 
   // 获取客户端IP地址
-  const clientIP = request.headers.get('CF-Connecting-IP') || 
-                   request.headers.get('X-Forwarded-For') || 
-                   'unknown';
+  const clientIP = request.headers.get('CF-Connecting-IP') ||
+      request.headers.get('X-Forwarded-For') ||
+      'unknown';
 
   // 根据文件类型选择合适的Telegram API
   const telegramFormData = new FormData();
   telegramFormData.append("chat_id", TG_CHAT_ID);
-  
+
   let apiEndpoint = "sendDocument";
   let fileParamName = "document";
-  
+
   // 检查文件类型
   const mimeType = file.type || '';
-  
+
   if (mimeType.startsWith('video/')) {
     apiEndpoint = "sendVideo";
     fileParamName = "video";
@@ -94,16 +94,16 @@ export async function onRequest(context) {
     apiEndpoint = "sendDocument";
     fileParamName = "document";
   }
-  
+
   telegramFormData.append(fileParamName, file);
 
   try {
     const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TG_BOT_TOKEN}/${apiEndpoint}`,
-      {
-        method: "POST",
-        body: telegramFormData,
-      }
+        `https://api.telegram.org/bot${TG_BOT_TOKEN}/${apiEndpoint}`,
+        {
+          method: "POST",
+          body: telegramFormData,
+        }
     );
 
     const telegramData = await telegramResponse.json();
@@ -114,7 +114,7 @@ export async function onRequest(context) {
 
     // 提取文件信息，根据不同的API响应结构获取文件信息
     let fileId, fileName, fileSize, fileMimeType, fileUniqueId;
-    
+
     if (apiEndpoint === "sendVideo") {
       fileId = telegramData.result.video.file_id;
       fileName = telegramData.result.video.file_name || file.name;
@@ -167,32 +167,32 @@ export async function onRequest(context) {
 
     // 返回完整的响应信息
     return new Response(
-      JSON.stringify({
-        success: true,
-        src: fileUrl,
-        fileName,
-        fileSize,
-        mimeType: fileMimeType,
-        fileType: apiEndpoint.replace('send', '').toLowerCase(),
-        fileUniqueId
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
+        JSON.stringify({
+          success: true,
+          src: fileUrl,
+          fileName,
+          fileSize,
+          mimeType: fileMimeType,
+          fileType: apiEndpoint.replace('send', '').toLowerCase(),
+          fileUniqueId
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to upload file" }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
+        JSON.stringify({ error: error.message || "Failed to upload file" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
     );
   }
 }
