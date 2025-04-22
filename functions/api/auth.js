@@ -7,7 +7,7 @@ export async function onRequest(context) {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
     });
   }
@@ -25,7 +25,7 @@ export async function onRequest(context) {
 
   try {
     const body = await request.json();
-    const { action, username, password, newPassword } = body;
+    const { action, username, password, newPassword, sessionToken } = body;
 
     // 获取存储的管理员凭据
     let adminCredentials = await env.ADMIN_CREDENTIALS.get("admin");
@@ -46,7 +46,10 @@ export async function onRequest(context) {
     // 登录验证
     if (action === "login") {
       if (!username || !password) {
-        return new Response(JSON.stringify({ error: "Missing username or password" }), {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "Missing username or password" 
+        }), {
           status: 400,
           headers: {
             "Content-Type": "application/json",
@@ -92,7 +95,10 @@ export async function onRequest(context) {
     // 修改密码
     else if (action === "changePassword") {
       if (!username || !password || !newPassword) {
-        return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: "Missing required fields" 
+        }), {
           status: 400,
           headers: {
             "Content-Type": "application/json",
@@ -134,8 +140,6 @@ export async function onRequest(context) {
     
     // 验证会话
     else if (action === "verifySession") {
-      const { sessionToken } = body;
-      
       if (!sessionToken) {
         return new Response(JSON.stringify({ 
           success: false, 
@@ -195,8 +199,40 @@ export async function onRequest(context) {
       });
     }
     
+    // 注销会话
+    else if (action === "logout") {
+      if (!sessionToken) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Missing session token" 
+        }), {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
+      
+      // 删除会话
+      await env.ADMIN_SESSIONS.delete(sessionToken);
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Logged out successfully" 
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+    
     else {
-      return new Response(JSON.stringify({ error: "Invalid action" }), {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: "Invalid action" 
+      }), {
         status: 400,
         headers: {
           "Content-Type": "application/json",
@@ -205,7 +241,10 @@ export async function onRequest(context) {
       });
     }
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message || "Internal server error" }), {
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: error.message || "Internal server error" 
+    }), {
       status: 500,
       headers: {
         "Content-Type": "application/json",
