@@ -163,10 +163,21 @@ export async function onRequest(context) {
 
     await env.FILE_STORE.put(fileUniqueId, JSON.stringify(metadata));
 
-    // 生成 URL
+    // 生成随机字符串
+    const generateRandomString = (length) => {
+      const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      return result;
+    };
+    
+    // 生成 URL，添加随机值避免重复
+    const randomValue = generateRandomString(6); // 生成6位随机字符串
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
-    const fileUrl = `${urlPrefix}${fileUniqueId}`;
+    const fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}`;
 
     // 返回完整的响应信息
     return new Response(
