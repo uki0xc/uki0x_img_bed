@@ -12,9 +12,12 @@ export async function onRequest(context) {
     });
   }
 
-  // 检查请求路径是否为 /upload
+  // 检查请求路径是否为 /api/upload
   const url = new URL(request.url);
-  if (url.pathname !== "/upload") {
+  const pathSegments = url.pathname.split('/');
+  const lastSegment = pathSegments[pathSegments.length - 1];
+  
+  if (lastSegment !== "upload") {
     return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
       headers: {
