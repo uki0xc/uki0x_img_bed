@@ -18,6 +18,8 @@
       --success-hover: #43a047;
       --danger-color: #f44336;
       --danger-hover: #e53935;
+      --warning-color: #ff9800;
+      --warning-hover: #fb8c00;
       --info-color: #2196F3;
       --info-hover: #1e88e5;
     }
@@ -72,6 +74,11 @@
       margin-right: 10px;
     }
     
+    .nav-links {
+      display: flex;
+      align-items: center;
+    }
+    
     .nav-link {
       color: var(--gray-text);
       text-decoration: none;
@@ -94,30 +101,55 @@
       padding: 40px 0;
     }
     
+    .section-title {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      color: var(--dark-text);
+      display: flex;
+      align-items: center;
+    }
+    
+    .section-title i {
+      margin-right: 10px;
+      color: var(--primary-color);
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
     .dashboard-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
-    }
-    
-    .section-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--dark-text);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
     }
     
     .search-container {
       display: flex;
       max-width: 400px;
+      width: 100%;
     }
     
     .search-input {
       flex: 1;
       padding: 10px 15px;
       border: 1px solid #ced4da;
+      border-right: none;
       border-radius: 6px 0 0 6px;
       font-size: 1rem;
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
     }
     
     .search-btn {
@@ -134,105 +166,24 @@
       background-color: var(--primary-hover);
     }
     
-    .card {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: var(--card-shadow);
-      padding: 30px;
-      margin-bottom: 30px;
-    }
-    
-    .file-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-    }
-    
-    .file-card {
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: var(--card-shadow);
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-    
-    .file-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .file-preview {
-      height: 180px;
-      position: relative;
-      overflow: hidden;
-      background-color: #f1f3f5;
+    .action-buttons {
       display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .file-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s;
-    }
-    
-    .file-card:hover .file-preview img {
-      transform: scale(1.05);
-    }
-    
-    .file-type-icon {
-      font-size: 3rem;
-      color: var(--gray-text);
-    }
-    
-    .file-info {
-      padding: 16px;
-    }
-    
-    .file-name {
-      font-weight: 600;
-      margin-bottom: 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    
-    .file-meta {
-      color: var(--gray-text);
-      font-size: 0.9rem;
-      margin-bottom: 15px;
-    }
-    
-    .file-size, .file-date {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-    
-    .file-meta i {
-      margin-right: 5px;
-      width: 16px;
-    }
-    
-    .file-actions {
-      display: flex;
-      gap: 8px;
+      gap: 10px;
     }
     
     .btn {
-      flex: 1;
       display: inline-flex;
-      justify-content: center;
       align-items: center;
-      padding: 8px 12px;
+      justify-content: center;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 15px;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: 500;
-      transition: all 0.2s;
+      transition: all 0.3s;
       text-decoration: none;
     }
     
@@ -240,98 +191,302 @@
       margin-right: 5px;
     }
     
-    .btn-view {
-      background-color: var(--primary-color);
-      color: white;
-    }
-    
-    .btn-view:hover {
+    .btn:hover {
       background-color: var(--primary-hover);
+      transform: translateY(-2px);
     }
     
-    .btn-copy {
-      background-color: var(--info-color);
-      color: white;
-    }
-    
-    .btn-copy:hover {
-      background-color: var(--info-hover);
-    }
-    
-    .btn-delete {
+    .btn-danger {
       background-color: var(--danger-color);
-      color: white;
     }
     
-    .btn-delete:hover {
+    .btn-danger:hover {
       background-color: var(--danger-hover);
     }
     
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 0;
+    .btn-success {
+      background-color: var(--success-color);
+    }
+    
+    .btn-success:hover {
+      background-color: var(--success-hover);
+    }
+    
+    .btn-warning {
+      background-color: var(--warning-color);
+    }
+    
+    .btn-warning:hover {
+      background-color: var(--warning-hover);
+    }
+    
+    .btn-info {
+      background-color: var(--info-color);
+    }
+    
+    .btn-info:hover {
+      background-color: var(--info-hover);
+    }
+    
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+    
+    .btn:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: var(--dark-text);
+    }
+    
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .checkbox-cell {
+      width: 40px;
+      text-align: center;
+    }
+    
+    .file-type-cell {
+      width: 60px;
+      text-align: center;
+    }
+    
+    .file-icon {
+      font-size: 1.5rem;
       color: var(--gray-text);
     }
     
-    .loading-icon {
-      font-size: 3rem;
-      margin-bottom: 20px;
+    .file-name {
+      font-weight: 500;
+      color: var(--dark-text);
+      display: flex;
+      align-items: center;
+    }
+    
+    .file-name a {
+      color: var(--primary-color);
+      text-decoration: none;
+      margin-left: 5px;
+    }
+    
+    .file-name a:hover {
+      text-decoration: underline;
+    }
+    
+    .file-size {
+      color: var(--gray-text);
+      font-size: 0.9rem;
+    }
+    
+    .file-date {
+      color: var(--gray-text);
+      font-size: 0.9rem;
+    }
+    
+    .file-ip {
+      color: var(--gray-text);
+      font-size: 0.9rem;
+    }
+    
+    .action-cell {
+      width: 120px;
+      text-align: right;
+    }
+    
+    .action-btn {
+      background: none;
+      border: none;
+      color: var(--gray-text);
+      cursor: pointer;
+      font-size: 1rem;
+      transition: color 0.2s;
+      margin-left: 10px;
+    }
+    
+    .action-btn:hover {
       color: var(--primary-color);
     }
     
-    .loading-text {
-      font-size: 1.2rem;
+    .action-btn.delete:hover {
+      color: var(--danger-color);
     }
     
-    .empty-state {
+    .pagination {
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      padding: 60px 0;
+      margin-top: 20px;
+    }
+    
+    .pagination-btn {
+      background-color: white;
+      border: 1px solid #dee2e6;
+      color: var(--primary-color);
+      padding: 8px 12px;
+      margin: 0 5px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    
+    .pagination-btn:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .pagination-btn.active {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .pagination-btn:disabled {
+      color: #6c757d;
+      cursor: not-allowed;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 500px;
+      padding: 30px;
+      position: relative;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark-text);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--gray-text);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    
+    .modal-close:hover {
+      color: var(--danger-color);
+    }
+    
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .alert-danger {
+      background-color: #ffebee;
+      color: var(--danger-color);
+      border: 1px solid #ffcdd2;
+    }
+    
+    .alert-success {
+      background-color: #e8f5e9;
+      color: var(--success-color);
+      border: 1px solid #c8e6c9;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .loading i {
+      font-size: 2rem;
+      color: var(--primary-color);
+    }
+    
+    .no-files {
+      text-align: center;
+      padding: 40px 0;
       color: var(--gray-text);
     }
     
-    .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-      color: #d1d5db;
+    .no-files i {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      opacity: 0.5;
     }
     
-    .empty-text {
-      font-size: 1.2rem;
-      margin-bottom: 20px;
+    .user-info {
+      display: flex;
+      align-items: center;
     }
     
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .tooltip .tooltip-text {
-      visibility: hidden;
-      background-color: rgba(0, 0, 0, 0.8);
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
       color: white;
-      text-align: center;
-      border-radius: 4px;
-      padding: 5px 10px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.8rem;
-      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      margin-right: 10px;
     }
     
-    .tooltip:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
+    .user-name {
+      font-weight: 500;
     }
     
     footer {
@@ -362,32 +517,37 @@
         text-align: center;
       }
       
+      .nav-links {
+        margin-top: 15px;
+      }
+      
       .nav-link {
-        margin: 10px 0 0 0;
+        margin: 5px;
       }
       
       .dashboard-header {
         flex-direction: column;
-        gap: 15px;
+        align-items: flex-start;
       }
       
       .search-container {
-        width: 100%;
-        max-width: none;
+        max-width: 100%;
       }
       
-      .file-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      .action-buttons {
+        margin-top: 10px;
       }
-    }
-    
-    @media (max-width: 480px) {
+      
       .card {
         padding: 20px;
       }
       
-      .file-grid {
-        grid-template-columns: 1fr;
+      .section-title {
+        font-size: 1.8rem;
+      }
+      
+      .file-type-cell, .file-ip {
+        display: none;
       }
     }
   </style>
@@ -399,46 +559,100 @@
         <i class="fas fa-cloud-upload-alt"></i>
         uki0x 图床
       </a>
-      <a href="/" class="nav-link">
-        <i class="fas fa-home"></i> 返回首页
-      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">
+          <i class="fas fa-home"></i> 首页
+        </a>
+        <a href="/user.html" class="nav-link">
+          <i class="fas fa-user"></i> 用户信息
+        </a>
+        <a href="#" class="nav-link" id="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> 退出
+        </a>
+      </div>
     </div>
   </header>
 
   <main>
     <div class="container">
-      <div class="dashboard-header">
-        <h1 class="section-title">文件管理</h1>
-        <div class="search-container">
-          <input type="text" class="search-input" id="search-input" placeholder="搜索文件...">
-          <button class="search-btn" id="search-btn">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
-      </div>
+      <div id="dashboard-alert" class="alert"></div>
       
       <div class="card">
-        <div id="loading" class="loading">
-          <div class="loading-icon">
-            <i class="fas fa-spinner fa-spin"></i>
+        <div class="dashboard-header">
+          <h1 class="section-title">
+            <i class="fas fa-folder-open"></i> 文件管理
+          </h1>
+          <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="搜索文件...">
+            <button class="search-btn" id="search-btn">
+              <i class="fas fa-search"></i>
+            </button>
           </div>
-          <div class="loading-text">正在加载文件...</div>
+          <div class="action-buttons">
+            <button class="btn btn-danger" id="delete-selected-btn" disabled>
+              <i class="fas fa-trash-alt"></i> 删除所选
+            </button>
+            <button class="btn btn-success" id="refresh-btn">
+              <i class="fas fa-sync-alt"></i> 刷新
+            </button>
+          </div>
         </div>
         
-        <div id="empty-state" class="empty-state" style="display: none;">
-          <div class="empty-icon">
+        <div class="loading" id="loading">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>加载中...</p>
+        </div>
+        
+        <div class="table-container">
+          <table id="files-table">
+            <thead>
+              <tr>
+                <th class="checkbox-cell">
+                  <input type="checkbox" id="select-all">
+                </th>
+                <th class="file-type-cell">类型</th>
+                <th>文件名</th>
+                <th>大小</th>
+                <th>上传时间</th>
+                <th>上传IP</th>
+                <th class="action-cell">操作</th>
+              </tr>
+            </thead>
+            <tbody id="files-list">
+              <!-- 文件列表将通过JavaScript动态生成 -->
+            </tbody>
+          </table>
+          
+          <div class="no-files" id="no-files" style="display: none;">
             <i class="fas fa-folder-open"></i>
+            <p>暂无文件</p>
           </div>
-          <div class="empty-text">没有找到任何文件</div>
-          <a href="/" class="btn btn-view">
-            <i class="fas fa-upload"></i> 上传文件
-          </a>
         </div>
         
-        <div id="file-grid" class="file-grid"></div>
+        <div class="pagination" id="pagination">
+          <!-- 分页控件将通过JavaScript动态生成 -->
+        </div>
       </div>
     </div>
   </main>
+
+  <!-- 删除确认模态框 -->
+  <div class="modal" id="delete-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">确认删除</h2>
+        <button class="modal-close" id="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>您确定要删除选中的文件吗？此操作不可撤销。</p>
+        <p id="delete-count"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancel-delete">取消</button>
+        <button class="btn btn-danger" id="confirm-delete">确认删除</button>
+      </div>
+    </div>
+  </div>
 
   <footer>
     <div class="container">
@@ -452,239 +666,45 @@
   </footer>
 
   <script>
-    const fileGrid = document.getElementById('file-grid');
-    const loading = document.getElementById('loading');
-    const emptyState = document.getElementById('empty-state');
-    const searchInput = document.getElementById('search-input');
-    const searchBtn = document.getElementById('search-btn');
-    
-    let allFiles = [];
-
-    // 加载文件列表
-    async function loadFiles() {
-      try {
-        const response = await fetch('/api/list');
-        const data = await response.json();
-        
-        loading.style.display = 'none';
-        
-        if (data.success) {
-          allFiles = data.files;
-          renderFiles(allFiles);
-        } else {
-          throw new Error(data.error || '加载文件失败');
-        }
-      } catch (error) {
-        alert(`错误: ${error.message || '发生未知错误'}`);
-        loading.innerHTML = `
-          <div class="empty-icon">
-            <i class="fas fa-exclamation-circle"></i>
-          </div>
-          <div class="loading-text">加载文件失败，请刷新页面重试。</div>
-        `;
-      }
-    }
-
-    // 渲染文件卡片
-    function renderFiles(files) {
-      if (!files.length) {
-        fileGrid.style.display = 'none';
-        emptyState.style.display = 'flex';
+    document.addEventListener('DOMContentLoaded', function() {
+      // 检查登录状态
+      if (!sessionStorage.getItem('adminLoggedIn')) {
+        window.location.href = '/login.html';
         return;
       }
       
-      fileGrid.style.display = 'grid';
-      emptyState.style.display = 'none';
+      // 获取DOM元素
+      const filesTable = document.getElementById('files-table');
+      const filesList = document.getElementById('files-list');
+      const noFiles = document.getElementById('no-files');
+      const loading = document.getElementById('loading');
+      const pagination = document.getElementById('pagination');
+      const selectAll = document.getElementById('select-all');
+      const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+      const refreshBtn = document.getElementById('refresh-btn');
+      const searchInput = document.getElementById('search-input');
+      const searchBtn = document.getElementById('search-btn');
+      const deleteModal = document.getElementById('delete-modal');
+      const closeModal = document.getElementById('close-modal');
+      const cancelDelete = document.getElementById('cancel-delete');
+      const confirmDelete = document.getElementById('confirm-delete');
+      const deleteCount = document.getElementById('delete-count');
+      const dashboardAlert = document.getElementById('dashboard-alert');
+      const logoutBtn = document.getElementById('logout-btn');
       
-      // 按上传日期排序（最新的在前面）
-      files.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+      // 状态变量
+      let files = [];
+      let selectedFiles = [];
+      let currentPage = 1;
+      let itemsPerPage = 10;
+      let totalPages = 1;
+      let searchQuery = '';
       
-      fileGrid.innerHTML = files.map(file => {
-        const isImage = file.mimeType && file.mimeType.startsWith('image/');
-        const fileIcon = getFileTypeIcon(file.mimeType);
-        const fileDate = formatDate(file.uploadDate);
-        
-        return `
-          <div class="file-card">
-            <div class="file-preview">
-              ${isImage 
-                ? `<img src="${file.url}" alt="${file.fileName}">`
-                : `<div class="file-type-icon">${fileIcon}</div>`
-              }
-            </div>
-            <div class="file-info">
-              <div class="file-name" title="${file.fileName}">${file.fileName}</div>
-              <div class="file-meta">
-                <div class="file-size">
-                  <i class="fas fa-weight-hanging"></i> ${formatFileSize(file.fileSize)}
-                </div>
-                <div class="file-date">
-                  <i class="far fa-calendar-alt"></i> ${fileDate}
-                </div>
-              </div>
-              <div class="file-actions">
-                <a href="${file.url}" target="_blank" class="btn btn-view tooltip">
-                  <i class="fas fa-eye"></i> 查看
-                  <span class="tooltip-text">在新标签页中打开</span>
-                </a>
-                <button class="btn btn-copy tooltip" onclick="copyToClipboard('${file.url}')">
-                  <i class="fas fa-link"></i> 复制
-                  <span class="tooltip-text">复制链接到剪贴板</span>
-                </button>
-                <button class="btn btn-delete tooltip" onclick="deleteFile('${file.fileUniqueId}')">
-                  <i class="fas fa-trash-alt"></i> 删除
-                  <span class="tooltip-text">删除此文件</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // 删除文件
-    async function deleteFile(fileUniqueId) {
-      if (!confirm('确定要删除此文件吗？此操作无法撤销。')) {
-        return;
-      }
+      // 初始化
+      loadFiles();
       
-      try {
-        const response = await fetch('/api/delete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ fileUniqueId }),
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          // 显示成功通知
-          const notification = document.createElement('div');
-          notification.style.position = 'fixed';
-          notification.style.bottom = '20px';
-          notification.style.right = '20px';
-          notification.style.backgroundColor = 'var(--success-color)';
-          notification.style.color = 'white';
-          notification.style.padding = '15px 20px';
-          notification.style.borderRadius = '4px';
-          notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-          notification.style.zIndex = '1000';
-          notification.innerHTML = '<i class="fas fa-check-circle"></i> 文件删除成功';
-          document.body.appendChild(notification);
-          
-          setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transition = 'opacity 0.5s';
-            setTimeout(() => document.body.removeChild(notification), 500);
-          }, 3000);
-          
-          // 从列表中移除文件并重新渲染
-          allFiles = allFiles.filter(file => file.fileUniqueId !== fileUniqueId);
-          renderFiles(allFiles);
-        } else {
-          throw new Error(data.error || '删除文件失败');
-        }
-      } catch (error) {
-        alert(`错误: ${error.message || '发生未知错误'}`);
-      }
-    }
-
-    // 复制链接到剪贴板
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        const notification = document.createElement('div');
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.right = '20px';
-        notification.style.backgroundColor = 'var(--info-color)';
-        notification.style.color = 'white';
-        notification.style.padding = '15px 20px';
-        notification.style.borderRadius = '4px';
-        notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-        notification.style.zIndex = '1000';
-        notification.innerHTML = '<i class="fas fa-check-circle"></i> 链接已复制到剪贴板';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          notification.style.opacity = '0';
-          notification.style.transition = 'opacity 0.5s';
-          setTimeout(() => document.body.removeChild(notification), 500);
-        }, 3000);
-      }).catch(err => {
-        console.error('复制失败: ', err);
-      });
-    }
-
-    // 搜索文件
-    function searchFiles() {
-      const searchTerm = searchInput.value.toLowerCase().trim();
-      
-      if (!searchTerm) {
-        renderFiles(allFiles);
-        return;
-      }
-      
-      const filteredFiles = allFiles.filter(file => 
-        file.fileName.toLowerCase().includes(searchTerm)
-      );
-      
-      renderFiles(filteredFiles);
-    }
-
-    // 搜索按钮点击处理器
-    searchBtn.addEventListener('click', searchFiles);
-    
-    // 回车键搜索
-    searchInput.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') {
-        searchFiles();
-      }
-    });
-
-    // 格式化文件大小
-    function formatFileSize(bytes) {
-      if (bytes === 0) return '0 字节';
-      const k = 1024;
-      const sizes = ['字节', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    // 格式化日期
-    function formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('zh-CN', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-      });
-    }
-
-    // 根据文件类型获取图标
-    function getFileTypeIcon(mimeType) {
-      if (!mimeType) return '<i class="fas fa-file"></i>';
-      
-      if (mimeType.startsWith('image/')) return '<i class="far fa-image"></i>';
-      if (mimeType.startsWith('video/')) return '<i class="fas fa-film"></i>';
-      if (mimeType.startsWith('audio/')) return '<i class="fas fa-music"></i>';
-      if (mimeType.includes('pdf')) return '<i class="fas fa-file-pdf"></i>';
-      if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) 
-        return '<i class="fas fa-file-archive"></i>';
-      if (mimeType.includes('word') || mimeType.includes('document')) 
-        return '<i class="fas fa-file-word"></i>';
-      if (mimeType.includes('excel') || mimeType.includes('sheet')) 
-        return '<i class="fas fa-file-excel"></i>';
-      if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) 
-        return '<i class="fas fa-file-powerpoint"></i>';
-      if (mimeType.includes('text/')) return '<i class="fas fa-file-alt"></i>';
-      
-      return '<i class="fas fa-file"></i>';
-    }
-
-    // 页面加载时加载文件
-    window.addEventListener('load', loadFiles);
-  </script>
-</body>
-</html>
+      // 事件监听器
+      selectAll.addEventListener('change', handleSelectAll);
+      deleteSelectedBtn.addEventListener('click', showDeleteModal);
+      refreshBtn.addEventListener('click', loa
+(Content truncated due to size limit. Use line ranges to read in chunks)
