@@ -428,8 +428,8 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // 检查登录状态
-      if (!sessionStorage.getItem('adminLoggedIn')) {
+      // 检查登录状态 - 修改为使用localStorage实现持久化
+      if (!localStorage.getItem('adminLoggedIn')) {
         window.location.href = '/login.html';
         return;
       }
@@ -455,8 +455,8 @@
         try {
           showLoading();
           
-          // 获取认证信息
-          const authHeader = sessionStorage.getItem('adminAuth');
+          // 获取认证信息 - 修改为使用localStorage
+          const authHeader = localStorage.getItem('adminAuth');
           const credentials = atob(authHeader).split(':');
           adminUsername.textContent = credentials[0];
           
@@ -503,10 +503,10 @@
         }
       }
       
-      // 退出登录
+      // 退出登录 - 修改为清除localStorage
       function logout() {
-        sessionStorage.removeItem('adminLoggedIn');
-        sessionStorage.removeItem('adminAuth');
+        localStorage.removeItem('adminLoggedIn');
+        localStorage.removeItem('adminAuth');
         window.location.href = '/';
       }
       
