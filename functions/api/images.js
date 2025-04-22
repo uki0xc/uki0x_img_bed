@@ -44,11 +44,17 @@ async function handleGet(request, env) {
     // 列出文件
     const files = await listFiles(env, directory);
     
+    // 添加调试信息
+    console.log('Files returned:', JSON.stringify(files));
+    
     return new Response(JSON.stringify({
       success: true,
       files: files
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   } catch (error) {
     console.error('获取文件列表错误:', error);
@@ -58,7 +64,10 @@ async function handleGet(request, env) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   }
 }
@@ -81,14 +90,20 @@ async function handleDelete(request, env) {
         error: '缺少必要参数'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
     
     return new Response(JSON.stringify({
       success: true
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   } catch (error) {
     console.error('删除文件错误:', error);
@@ -98,114 +113,137 @@ async function handleDelete(request, env) {
       error: error.message
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   }
 }
 
 // 列出指定目录的文件和子目录
 async function listFiles(env, directory) {
-  const prefix = directory ? `${directory}/` : '';
-  const list = await env.FILE_STORE.list({ prefix });
-  const dirPrefix = 'dir:';
-  
-  const files = [];
-  const dirSet = new Set();
-  
-  // 处理文件
-  for (const key of list.keys) {
-    const keyName = key.name;
+  try {
+    const prefix = directory ? `${directory}/` : '';
+    const list = await env.FILE_STORE.list({ prefix });
+    const dirPrefix = 'dir:';
     
-    // 跳过目录记录
-    if (keyName.startsWith(dirPrefix)) {
-      continue;
-    }
+    console.log('KV list keys:', JSON.stringify(list.keys.map(k => k.name)));
     
-    const value = await env.FILE_STORE.get(keyName);
-    if (value) {
-      try {
-        const fileData = JSON.parse(value);
-        
-        // 如果文件在当前目录
-        if (!directory || keyName.startsWith(prefix)) {
-          // 只显示直接子文件，跳过子目录下的文件
-          const relativePath = keyName.slice(prefix.length);
+    const files = [];
+    const dirSet = new Set();
+    
+    // 处理文件
+    for (const key of list.keys) {
+      const keyName = key.name;
+      
+      // 跳过目录记录
+      if (keyName.startsWith(dirPrefix)) {
+        continue;
+      }
+      
+      const value = await env.FILE_STORE.get(keyName);
+      console.log(`Key: ${keyName}, Value: ${value}`);
+      
+      if (value) {
+        try {
+          const fileData = JSON.parse(value);
+          console.log(`Parsed fileData: ${JSON.stringify(fileData)}`);
           
-          if (!relativePath.includes('/')) {
-            // 构建文件URL
-            const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
-            // 使用env中存储的request对象获取host
-            const host = env.REQUEST ? env.REQUEST.headers.get("host") : 'localhost';
-            const urlPrefix = userConfig.urlPrefix || `https://${host}/file/`;
-            const fileUrl = fileData.url || `${urlPrefix}${keyName}`;
+          // 如果文件在当前目录
+          if (!directory || keyName.startsWith(prefix)) {
+            // 只显示直接子文件，跳过子目录下的文件
+            const relativePath = keyName.slice(prefix.length);
             
-            // 映射字段名，兼容新旧数据格式
-            files.push({
-              id: fileData.id || fileData.fileUniqueId || keyName,
-              name: fileData.name || fileData.fileName || '未命名文件',
-              url: fileData.url || fileUrl,
-              size: fileData.size || fileData.fileSize || 0,
-              uploadTime: fileData.uploadTime || fileData.uploadDate || new Date().toISOString(),
-              type: 'file'
-            });
-          } else {
-            // 对于子目录下的文件，记录目录名
-            const dirName = relativePath.split('/')[0];
-            dirSet.add(dirName);
+            if (!relativePath.includes('/')) {
+              // 构建文件URL
+              const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
+              // 使用env中存储的request对象获取host
+              const host = env.REQUEST ? env.REQUEST.headers.get("host") : 'localhost';
+              const urlPrefix = userConfig.urlPrefix || `https://${host}/file/`;
+              
+              // 确保fileUniqueId存在，如果不存在则使用keyName
+              const fileUniqueId = fileData.fileUniqueId || keyName;
+              
+              // 构建URL，确保包含随机值以避免重复
+              let fileUrl = fileData.url;
+              if (!fileUrl) {
+                // 从upload.js中复制URL生成逻辑
+                const randomValue = generateRandomString(6);
+                fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}`;
+              }
+              
+              // 映射字段名，兼容新旧数据格式
+              files.push({
+                id: fileData.id || fileData.fileUniqueId || keyName,
+                name: fileData.name || fileData.fileName || '未命名文件',
+                url: fileUrl,
+                size: fileData.size || fileData.fileSize || 0,
+                uploadTime: fileData.uploadTime || fileData.uploadDate || new Date().toISOString(),
+                type: 'file'
+              });
+            } else {
+              // 对于子目录下的文件，记录目录名
+              const dirName = relativePath.split('/')[0];
+              dirSet.add(dirName);
+            }
           }
+        } catch (e) {
+          console.error('解析文件数据错误:', e, 'Raw value:', value);
         }
-      } catch (e) {
-        console.error('解析文件数据错误:', e);
       }
     }
-  }
-  
-  // 添加子目录
-  for (const dirName of dirSet) {
-    files.push({
-      name: dirName,
-      type: 'directory'
-    });
-  }
-  
-  // 获取目录列表
-  const dirList = await env.FILE_STORE.list({ prefix: `${dirPrefix}${prefix}` });
-  
-  // 处理直接子目录
-  for (const key of dirList.keys) {
-    const keyName = key.name;
     
-    // 只处理目录记录
-    if (keyName.startsWith(dirPrefix)) {
-      const dirPath = keyName.slice(dirPrefix.length);
+    // 添加子目录
+    for (const dirName of dirSet) {
+      files.push({
+        name: dirName,
+        type: 'directory'
+      });
+    }
+    
+    // 获取目录列表
+    const dirList = await env.FILE_STORE.list({ prefix: `${dirPrefix}${prefix}` });
+    
+    // 处理直接子目录
+    for (const key of dirList.keys) {
+      const keyName = key.name;
       
-      // 只显示直接子目录
-      if (dirPath.startsWith(prefix)) {
-        const relativePath = dirPath.slice(prefix.length);
+      // 只处理目录记录
+      if (keyName.startsWith(dirPrefix)) {
+        const dirPath = keyName.slice(dirPrefix.length);
         
-        if (!relativePath.includes('/')) {
-          const value = await env.FILE_STORE.get(keyName);
-          if (value) {
-            try {
-              const dirData = JSON.parse(value);
-              
-              // 避免重复添加
-              if (!Array.from(dirSet).includes(dirData.name)) {
-                files.push({
-                  name: dirData.name,
-                  type: 'directory'
-                });
+        // 只显示直接子目录
+        if (dirPath.startsWith(prefix)) {
+          const relativePath = dirPath.slice(prefix.length);
+          
+          if (!relativePath.includes('/')) {
+            const value = await env.FILE_STORE.get(keyName);
+            if (value) {
+              try {
+                const dirData = JSON.parse(value);
+                
+                // 避免重复添加
+                if (!Array.from(dirSet).includes(dirData.name)) {
+                  files.push({
+                    name: dirData.name,
+                    type: 'directory'
+                  });
+                }
+              } catch (e) {
+                console.error('解析目录数据错误:', e);
               }
-            } catch (e) {
-              console.error('解析目录数据错误:', e);
             }
           }
         }
       }
     }
+    
+    return files;
+  } catch (error) {
+    console.error('列出文件错误:', error);
+    return []; // 返回空数组而不是抛出错误，避免前端崩溃
   }
-  
-  return files;
 }
 
 // 删除文件
@@ -220,7 +258,7 @@ async function deleteFile(env, fileId) {
       try {
         const fileData = JSON.parse(value);
         
-        if (fileData.id === fileId) {
+        if (fileData.id === fileId || fileData.fileUniqueId === fileId || key.name === fileId) {
           // 从 KV 存储中删除文件记录
           await env.FILE_STORE.delete(key.name);
           return;
@@ -252,4 +290,14 @@ async function deleteDirectory(env, directory) {
   for (const key of dirList.keys) {
     await env.FILE_STORE.delete(key.name);
   }
+}
+
+// 生成随机字符串的辅助函数
+function generateRandomString(length) {
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 }
