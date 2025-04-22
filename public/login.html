@@ -340,8 +340,8 @@
           
           if (response.ok) {
             // 登录成功，设置会话
-            sessionStorage.setItem('adminLoggedIn', 'true');
-            sessionStorage.setItem('adminAuth', btoa(username + ':' + password));
+            localStorage.setItem('adminLoggedIn', 'true');
+            localStorage.setItem('adminAuth', btoa(username + ':' + password));
             
             // 显示成功消息
             showAlert('登录成功，正在跳转...', 'success');
@@ -358,6 +358,19 @@
           showAlert('登录失败，请重试', 'danger');
         }
       });
+
+      // 检查登录状态
+      function checkLoginStatus() {
+        const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
+  
+        if (isLoggedIn) {
+          loginForm.style.display = 'none';
+          adminPanel.style.display = 'block';
+        } else {
+          loginForm.style.display = 'block';
+          adminPanel.style.display = 'none';
+        }
+      }
       
       // 显示提示消息
       function showAlert(message, type) {
