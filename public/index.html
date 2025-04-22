@@ -31,6 +31,9 @@
       background-color: var(--light-bg);
       color: var(--dark-text);
       line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
     
     .container {
@@ -90,6 +93,7 @@
     
     main {
       padding: 40px 0;
+      flex: 1;
     }
     
     .section-title {
@@ -434,7 +438,7 @@
         </div>
         
         <!-- 新增: 选中文件信息展示区域 -->
-        <div class="selected-file" id="selected-file-info">
+        <div class="selected-file" id="selected-file-info" style="display: none;">
           <div class="selected-file-header">
             <div class="selected-file-title">
               <i class="fas fa-file"></i> <span id="selected-file-name">文件名称</span>
@@ -613,10 +617,5 @@
         return 'fas fa-file-powerpoint';
       if (mimeType.includes('text/')) return 'fas fa-file-alt';
       
-      return 'fas fa-file';
-    }
-
-    function simulateProgress(callback) {
-      progressContainer.style.display = 'block';
-      let
+      return 'fas fa-
 (Content truncated due to size limit. Use line ranges to read in chunks)
