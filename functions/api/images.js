@@ -173,14 +173,29 @@ async function listFiles(env, directory) {
                 fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}`;
               }
               
-              // 映射字段名，兼容新旧数据格式
+              // 获取文件类型图标
+              const fileType = getFileTypeIcon(fileData.mimeType || '');
+              
+              // 格式化文件大小
+              const formattedSize = formatFileSize(fileData.size || fileData.fileSize || 0);
+              
+              // 格式化上传时间
+              const uploadTime = fileData.uploadTime || fileData.uploadDate || new Date().toISOString();
+              const formattedDate = formatDate(uploadTime);
+              
+              // 映射字段名，兼容新旧数据格式，并添加dashboard.html需要的字段
               files.push({
                 id: fileData.id || fileData.fileUniqueId || keyName,
                 name: fileData.name || fileData.fileName || '未命名文件',
                 url: fileUrl,
-                size: fileData.size || fileData.fileSize || 0,
-                uploadTime: fileData.uploadTime || fileData.uploadDate || new Date().toISOString(),
-                type: 'file'
+                size: formattedSize,
+                rawSize: fileData.size || fileData.fileSize || 0,
+                uploadTime: formattedDate,
+                rawUploadTime: uploadTime,
+                uploadIP: fileData.clientIP || '未知',
+                type: 'file',
+                fileType: fileType,
+                mimeType: fileData.mimeType || ''
               });
             } else {
               // 对于子目录下的文件，记录目录名
@@ -198,7 +213,11 @@ async function listFiles(env, directory) {
     for (const dirName of dirSet) {
       files.push({
         name: dirName,
-        type: 'directory'
+        type: 'directory',
+        fileType: 'folder',
+        size: '-',
+        uploadTime: '-',
+        uploadIP: '-'
       });
     }
     
@@ -227,7 +246,11 @@ async function listFiles(env, directory) {
                 if (!Array.from(dirSet).includes(dirData.name)) {
                   files.push({
                     name: dirData.name,
-                    type: 'directory'
+                    type: 'directory',
+                    fileType: 'folder',
+                    size: '-',
+                    uploadTime: '-',
+                    uploadIP: '-'
                   });
                 }
               } catch (e) {
@@ -300,4 +323,52 @@ function generateRandomString(length) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  
+  return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + units[i];
+}
+
+// 格式化日期
+function formatDate(dateString) {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return dateString;
+  }
+}
+
+// 获取文件类型图标
+function getFileTypeIcon(mimeType) {
+  if (!mimeType) return 'fas fa-file';
+  
+  if (mimeType.startsWith('image/')) return 'far fa-image';
+  if (mimeType.startsWith('video/')) return 'fas fa-film';
+  if (mimeType.startsWith('audio/')) return 'fas fa-music';
+  if (mimeType.includes('pdf')) return 'fas fa-file-pdf';
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) 
+    return 'fas fa-file-archive';
+  if (mimeType.includes('word') || mimeType.includes('document')) 
+    return 'fas fa-file-word';
+  if (mimeType.includes('excel') || mimeType.includes('sheet')) 
+    return 'fas fa-file-excel';
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) 
+    return 'fas fa-file-powerpoint';
+  if (mimeType.includes('text/')) return 'fas fa-file-alt';
+  
+  return 'fas fa-file';
 }
