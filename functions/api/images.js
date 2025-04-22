@@ -2,6 +2,9 @@ export async function onRequest(context) {
   const { request, env } = context;
   const method = request.method;
   
+  // 将request对象添加到env中，以便在其他函数中使用
+  env.REQUEST = request;
+  
   if (method === 'GET') {
     return handleGet(request, env);
   } else if (method === 'DELETE') {
@@ -129,12 +132,20 @@ async function listFiles(env, directory) {
           const relativePath = keyName.slice(prefix.length);
           
           if (!relativePath.includes('/')) {
+            // 构建文件URL
+            const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
+            // 使用env中存储的request对象获取host
+            const host = env.REQUEST ? env.REQUEST.headers.get("host") : 'localhost';
+            const urlPrefix = userConfig.urlPrefix || `https://${host}/file/`;
+            const fileUrl = fileData.url || `${urlPrefix}${keyName}`;
+            
+            // 映射字段名，兼容新旧数据格式
             files.push({
-              id: fileData.id,
-              name: fileData.name,
-              url: fileData.url,
-              size: fileData.size,
-              uploadTime: fileData.uploadTime,
+              id: fileData.id || fileData.fileUniqueId || keyName,
+              name: fileData.name || fileData.fileName || '未命名文件',
+              url: fileData.url || fileUrl,
+              size: fileData.size || fileData.fileSize || 0,
+              uploadTime: fileData.uploadTime || fileData.uploadDate || new Date().toISOString(),
               type: 'file'
             });
           } else {
