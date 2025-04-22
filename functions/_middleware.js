@@ -3,8 +3,8 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   
-  // 静态文件直接放行
-  if (!url.pathname.startsWith('/api/')) {
+  // 静态文件和上传API直接放行
+  if (!url.pathname.startsWith('/api/') || url.pathname === '/api/upload') {
     return context.next();
   }
   
