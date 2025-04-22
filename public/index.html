@@ -158,6 +158,7 @@
       border-radius: 8px;
       display: none;
       animation: fadeIn 0.3s;
+      border: 1px solid #d1d5db;
     }
     
     @keyframes fadeIn {
@@ -218,6 +219,10 @@
     .file-preview {
       margin-top: 15px;
       text-align: center;
+      background-color: #f8fafc;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px dashed #d1d5db;
     }
     
     .file-preview img {
@@ -548,13 +553,47 @@
           const img = document.createElement('img');
           img.src = e.target.result;
           img.alt = file.name;
+          img.style.maxHeight = '200px';
+          img.style.maxWidth = '100%';
+          img.style.borderRadius = '4px';
+          img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
           filePreview.appendChild(img);
+        }
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const video = document.createElement('video');
+          video.src = e.target.result;
+          video.controls = true;
+          video.style.maxHeight = '200px';
+          video.style.maxWidth = '100%';
+          video.style.borderRadius = '4px';
+          filePreview.appendChild(video);
+        }
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('audio/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const audio = document.createElement('audio');
+          audio.src = e.target.result;
+          audio.controls = true;
+          audio.style.width = '100%';
+          filePreview.appendChild(audio);
+          
+          // 添加音频图标
+          const audioIcon = document.createElement('div');
+          audioIcon.innerHTML = '<i class="fas fa-music" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 10px;"></i>';
+          filePreview.insertBefore(audioIcon, audio);
         }
         reader.readAsDataURL(file);
       } else {
         const iconClass = getFileTypeIconClass(file.type);
-        filePreview.innerHTML = `<i class="${iconClass}" style="font-size: 5rem; color: var(--gray-text);"></i>`;
+        filePreview.innerHTML = `<i class="${iconClass}" style="font-size: 5rem; color: var(--primary-color);"></i>`;
       }
+      
+      // 显示上传按钮
+      uploadBtn.style.display = 'block';
     }
     
     function getFileTypeIconClass(mimeType) {
@@ -579,60 +618,5 @@
 
     function simulateProgress(callback) {
       progressContainer.style.display = 'block';
-      let width = 0;
-      const interval = setInterval(() => {
-        if (width >= 90) {
-          clearInterval(interval);
-        } else {
-          width += 5;
-          progressBar.style.width = width + '%';
-        }
-      }, 150);
-      
-      return () => {
-        clearInterval(interval);
-        progressBar.style.width = '100%';
-        setTimeout(() => {
-          callback();
-        }, 300);
-      };
-    }
-
-    uploadBtn.addEventListener('click', async () => {
-      if (!fileInput.files.length) {
-        alert('请先选择一个文件！');
-        return;
-      }
-
-      const file = fileInput.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-        
-        const completeProgress = simulateProgress(() => {
-          progressContainer.style.display = 'none';
-        });
-        
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        const data = await response.json();
-        
-        completeProgress();
-        
-        if (data.success) {
-          result.style.display = 'block';
-          resultContent.innerHTML = `
-            <div class="result-item">
-              <div class="result-label">文件名</div>
-              <div class="result-value">${data.fileName}</div>
-            </div>
-            <div class="result-item">
-              <div class="result-label">文件大小</div>
-              <div class=
+      let
 (Content truncated due to size limit. Use line ranges to read in chunks)
