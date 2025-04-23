@@ -330,6 +330,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           </td>
         `;
+        
+        // 为可预览的文件添加行点击事件和样式
+        if (isImage || isVideo || isAudio) {
+          tr.classList.add('previewable-row');
+          tr.dataset.url = file.url;
+          tr.dataset.type = file.mimeType;
+          tr.dataset.name = file.name;
+        }
       }
       
       tbody.appendChild(tr);
@@ -340,6 +348,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // 添加到文件列表
     fileList.innerHTML = '';
     fileList.appendChild(table);
+    
+    // 添加可预览行的样式
+    const style = document.createElement('style');
+    style.textContent = `
+      .previewable-row {
+        cursor: pointer;
+      }
+      .previewable-row:hover {
+        background-color: #f0f4ff !important;
+      }
+    `;
+    document.head.appendChild(style);
     
     // 添加全选事件处理
     const selectAllCheckbox = document.getElementById('select-all');
@@ -368,13 +388,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加事件处理
     document.querySelectorAll('.open-dir').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
         loadFiles(btn.dataset.path);
       });
     });
     
     document.querySelectorAll('.delete-dir').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
         if (confirm(`确定要删除目录 "${btn.dataset.path}" 及其所有内容吗？`)) {
           deleteDirectory(btn.dataset.path);
         }
@@ -382,7 +404,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.querySelectorAll('.copy-url').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
         copyToClipboard(btn.dataset.url);
         btn.innerHTML = '<i class="fas fa-check"></i>';
         setTimeout(() => {
@@ -392,7 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.querySelectorAll('.delete-file').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
         if (confirm('确定要删除此文件吗？')) {
           deleteFile(btn.dataset.id);
         }
@@ -401,14 +425,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加预览按钮事件处理
     document.querySelectorAll('.preview-file').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
         showFilePreview(btn.dataset.url, btn.dataset.type, btn.dataset.name);
       });
     });
     
     // 添加多选框事件处理
     document.querySelectorAll('.file-select').forEach(checkbox => {
-      checkbox.addEventListener('change', () => {
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
         const fileId = checkbox.dataset.id;
         
         if (checkbox.checked) {
@@ -426,6 +452,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 更新删除按钮状态
         updateDeleteSelectedButton();
+      });
+      
+      // 防止点击复选框时触发行点击事件
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
+    
+    // 添加行点击事件处理（点击整行预览文件）
+    document.querySelectorAll('.previewable-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        // 如果点击的是复选框或按钮，不触发预览
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+          return;
+        }
+        
+        showFilePreview(row.dataset.url, row.dataset.type, row.dataset.name);
       });
     });
   }
