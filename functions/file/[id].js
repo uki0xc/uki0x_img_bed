@@ -4,9 +4,9 @@ export async function onRequest(context) {
   const { request, env, params } = context;
   
   // Get file ID from URL parameters
-  const fileUniqueId = params.id;
+  let fileId = params.id;
   
-  if (!fileUniqueId) {
+  if (!fileId) {
     return new Response(JSON.stringify({ error: "File ID is required" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -14,6 +14,20 @@ export async function onRequest(context) {
   }
 
   try {
+    // 处理文件ID，提取fileUniqueId
+    // 格式：fileUniqueId_randomString.extension
+    let fileUniqueId = fileId;
+    
+    // 如果包含下划线，提取第一部分作为fileUniqueId
+    if (fileId.includes('_')) {
+      fileUniqueId = fileId.split('_')[0];
+    }
+    
+    // 如果包含扩展名（点号），去除扩展名部分
+    if (fileUniqueId.includes('.')) {
+      fileUniqueId = fileUniqueId.split('.')[0];
+    }
+
     // Get file metadata from KV store
     const metadataStr = await env.FILE_STORE.get(fileUniqueId);
     
@@ -25,12 +39,12 @@ export async function onRequest(context) {
     }
     
     const metadata = JSON.parse(metadataStr);
-    const { fileId, mimeType, fileName, fileType } = metadata;
+    const { fileId: telegramFileId, mimeType, fileName, fileType } = metadata;
 
     // Get file path from Telegram
     const TG_BOT_TOKEN = env.TG_BOT_TOKEN;
     const filePathResponse = await fetch(
-      `https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${fileId}`
+      `https://api.telegram.org/bot${TG_BOT_TOKEN}/getFile?file_id=${telegramFileId}`
     );
     
     const filePathData = await filePathResponse.json();
