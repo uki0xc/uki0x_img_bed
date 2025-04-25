@@ -14,18 +14,23 @@ export async function onRequest(context) {
   }
 
   try {
-    // 处理文件ID，提取fileUniqueId
-    // 格式：fileUniqueId_randomString.extension
-    let fileUniqueId = fileId;
-    
-    // 如果包含下划线，提取第一部分作为fileUniqueId
-    if (fileId.includes('_')) {
-      fileUniqueId = fileId.split('_')[0];
-    }
+    // 处理文件ID，提取随机字符串
+    // 新格式：randomString.extension
+    let randomString = fileId;
     
     // 如果包含扩展名（点号），去除扩展名部分
-    if (fileUniqueId.includes('.')) {
-      fileUniqueId = fileUniqueId.split('.')[0];
+    if (randomString.includes('.')) {
+      randomString = randomString.split('.')[0];
+    }
+    
+    // 从KV存储中获取映射的fileUniqueId
+    const fileUniqueId = await env.FILE_STORE.get(`map_${randomString}`);
+    
+    if (!fileUniqueId) {
+      return new Response(JSON.stringify({ error: "File mapping not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Get file metadata from KV store
