@@ -177,14 +177,22 @@ export async function onRequest(context) {
       return ext;
     };
 
-    // 生成 URL，添加随机值避免重复，并包含文件扩展名
+    // 生成 URL，使用随机值作为唯一标识，并包含文件扩展名
     const randomValue = generateRandomString(12); // 生成12位随机字符串
     const fileExtension = getFileExtension(fileName);
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
-    const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
+    
+    // 修改URL格式为 https://www.example.com/api/upload/随机十二位字母数字.文件后缀
+    // 使用host中的域名替代example.com
+    const host = request.headers.get("host");
+    const urlPrefix = userConfig.urlPrefix || `https://${host}/api/upload/`;
     
     // 确保所有文件扩展名（包括exe）都被正确处理
-    const fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
+    const fileUrl = `${urlPrefix}${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
+    
+    // 在KV存储中添加随机值到fileUniqueId的映射，以便[id].js可以查找
+    await env.FILE_STORE.put(`map_${randomValue}`, fileUniqueId);
+    
     console.log(`Generated URL: ${fileUrl}`);
 
     // 返回完整的响应信息
