@@ -182,10 +182,10 @@ export async function onRequest(context) {
     const fileExtension = getFileExtension(fileName);
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     
-    // 修改URL格式为 https://www.example.com/api/upload/随机十二位字母数字.文件后缀
+    // 修改URL格式为 https://www.example.com/file/随机十二位字母数字.文件后缀
     // 使用host中的域名替代example.com
     const host = request.headers.get("host");
-    const urlPrefix = userConfig.urlPrefix || `https://${host}/api/upload/`;
+    const urlPrefix = userConfig.urlPrefix || `https://${host}/file/`;
     
     // 确保所有文件扩展名（包括exe）都被正确处理
     const fileUrl = `${urlPrefix}${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
