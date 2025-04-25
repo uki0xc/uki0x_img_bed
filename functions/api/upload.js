@@ -171,7 +171,10 @@ export async function onRequest(context) {
     // 提取文件扩展名的函数
     const getFileExtension = (filename) => {
       if (!filename) return '';
-      return filename.split('.').pop().toLowerCase();
+      const ext = filename.split('.').pop().toLowerCase();
+      // 确保exe扩展名被正确处理
+      console.log(`File extension extracted: ${ext}`);
+      return ext;
     };
 
     // 生成 URL，添加随机值避免重复，并包含文件扩展名
@@ -179,7 +182,10 @@ export async function onRequest(context) {
     const fileExtension = getFileExtension(fileName);
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     const urlPrefix = userConfig.urlPrefix || `https://${request.headers.get("host")}/file/`;
+    
+    // 确保所有文件扩展名（包括exe）都被正确处理
     const fileUrl = `${urlPrefix}${fileUniqueId}_${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
+    console.log(`Generated URL: ${fileUrl}`);
 
     // 返回完整的响应信息
     return new Response(
