@@ -3,22 +3,11 @@ import mime from 'mime';
 export async function onRequest(context) {
   const { request, env, params } = context;
   
-  // Get file ID from URL parameters and extract the actual fileUniqueId
-  let fileId = params.id;
-  
-  if (!fileId) {
-    return new Response(JSON.stringify({ error: "File ID is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  
-  // 从URL中提取真正的fileUniqueId（格式：fileUniqueId_randomString.extension）
-  // 提取第一个下划线之前的部分作为fileUniqueId
-  const fileUniqueId = fileId.split('_')[0];
+  // Get file ID from URL parameters
+  const fileUniqueId = params.id;
   
   if (!fileUniqueId) {
-    return new Response(JSON.stringify({ error: "Invalid file ID format" }), {
+    return new Response(JSON.stringify({ error: "File ID is required" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
