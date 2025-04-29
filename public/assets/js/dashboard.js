@@ -248,216 +248,230 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderFileList(data) {
     if (!data.files || data.files.length === 0) {
       noFilesMessage.style.display = 'block';
+      fileList.innerHTML = ''; // 确保在没有文件时清空列表
       return;
     }
-    
-    // 创建表格视图
+
+    noFilesMessage.style.display = 'none';
+
+    // 创建表格
     const table = document.createElement('table');
-    table.className = 'file-table';
-    
-    // 创建表头
+    table.className = 'table table-hover'; // 添加 hover 效果
     const thead = document.createElement('thead');
     thead.innerHTML = `
       <tr>
-        <th class="checkbox-cell">
-          <input type="checkbox" id="select-all">
-        </th>
+        <th class="checkbox-cell"><input type="checkbox" id="select-all-checkbox"></th>
         <th class="file-type-cell">类型</th>
-        <th>文件名</th>
+        <th>名称</th>
         <th>大小</th>
         <th>上传时间</th>
-        <th>上传IP</th>
+        <th class="file-ip">上传IP</th>
         <th class="action-cell">操作</th>
       </tr>
     `;
     table.appendChild(thead);
-    
-    // 创建表格主体
+
     const tbody = document.createElement('tbody');
-    
-    // 添加文件行
     data.files.forEach(file => {
       const tr = document.createElement('tr');
-      
-      // 区分目录和文件
-      if (file.type === 'directory') {
-        // 目录行
-        tr.innerHTML = `
-          <td class="checkbox-cell"></td>
-          <td class="file-type-cell"><i class="fas fa-folder"></i></td>
-          <td class="file-name">${file.name}</td>
-          <td class="file-size">-</td>
-          <td class="file-date">-</td>
-          <td class="file-ip">-</td>
-          <td class="action-cell">
-            <button class="action-btn open-dir" data-path="${currentDirectory ? currentDirectory + '/' + file.name : file.name}" title="打开">
-              <i class="fas fa-folder-open"></i>
-            </button>
-            <button class="action-btn delete delete-dir" data-path="${currentDirectory ? currentDirectory + '/' + file.name : file.name}" title="删除">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-          </td>
-        `;
-      } else {
-        // 文件行
-        const isImage = file.mimeType && file.mimeType.startsWith('image/');
-        const isVideo = file.mimeType && file.mimeType.startsWith('video/');
-        const isAudio = file.mimeType && file.mimeType.startsWith('audio/');
-        const fileIcon = isImage ? 'far fa-image' : (isVideo ? 'fas fa-film' : (isAudio ? 'fas fa-music' : (file.fileType || 'fas fa-file')));
-        
-        
-        tr.innerHTML = `
-          <td class="checkbox-cell">
-            <input type="checkbox" class="file-select" data-id="${file.id}">
-          </td>
-          <td class="file-type-cell"><i class="${fileIcon}"></i></td>
-          <td class="file-name">${file.name}</td>
-          <td class="file-size">${file.size || '-'}</td>
-          <td class="file-date">${file.uploadTime || '-'}</td>
-          <td class="file-ip">${file.uploadIP || '-'}</td>
-          <td class="action-cell">
-            ${previewBtn}
-            <button class="action-btn copy-url" data-url="${file.url}" title="复制链接">
-              <i class="fas fa-copy"></i>
-            </button>
-            <button class="action-btn delete delete-file" data-id="${file.id}" title="删除">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-          </td>
-        `;
-        
-        // 为可预览的文件添加行点击事件和样式
-        if (isImage || isVideo || isAudio) {
-          tr.classList.add('previewable-row');
-          tr.dataset.url = file.url;
-          tr.dataset.type = file.mimeType;
-          tr.dataset.name = file.name;
+      tr.dataset.fileId = file.id; // 使用文件ID作为标识
+      tr.dataset.fileUrl = file.url;
+      tr.dataset.fileName = file.name;
+      tr.dataset.fileType = file.type; // 添加文件类型
+      tr.dataset.filePath = file.path; // 添加文件路径 (用于删除或导航)
+
+      // 格式化日期
+      const uploadDate = new Date(file.uploadTime);
+      const formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`;
+
+      tr.innerHTML = `
+        <td class="checkbox-cell"><input type="checkbox" class="file-checkbox" value="${file.id}"></td>
+        <td class="file-type-cell">${getFileIcon(file.type)}</td>
+        <td class="file-name">
+          ${file.type === 'directory' ? `<a href="#" class="folder-link" data-path="${file.path}">${file.name}</a>` : file.name}
+          <a href="${file.url}" target="_blank" title="在新标签页打开" class="action-btn open-link"><i class="fas fa-external-link-alt"></i></a>
+          <button class="action-btn copy-link" title="复制链接"><i class="fas fa-copy"></i></button>
+        </td>
+        <td>${formatFileSize(file.size)}</td>
+        <td>${formattedDate}</td>
+        <td class="file-ip">${file.uploadIP || 'N/A'}</td>
+        <td class="action-cell">
+          <button class="action-btn preview-btn" title="预览"><i class="fas fa-eye"></i></button>
+          ${file.type !== 'directory' ? `<button class="action-btn download-btn" title="下载"><i class="fas fa-download"></i></button>` : ''}
+          <button class="action-btn delete-btn" title="删除"><i class="fas fa-trash-alt"></i></button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      // 为整行添加点击事件监听器以触发预览
+      tr.addEventListener('click', (event) => {
+        // 检查点击目标是否是行本身或允许触发预览的子元素 (例如文件名)
+        // 阻止在点击复选框、操作按钮或文件夹链接时触发预览
+        const target = event.target;
+        const isInteractiveElement = target.closest('input[type="checkbox"], .action-btn, .folder-link');
+
+        if (!isInteractiveElement) {
+          // 只有非目录文件才能预览
+          if (file.type !== 'directory') {
+             // 使用 file.url, file.type, file.name 调用预览函数
+             showFilePreview(file.url, file.type, file.name);
+          }
+        }
+      });
+
+
+    }); // 结束 forEach
+
+    table.appendChild(tbody);
+    fileList.innerHTML = ''; // 清空旧内容
+    fileList.appendChild(table);
+
+    // 更新全选复选框状态
+    updateSelectAllCheckbox();
+
+    // 添加事件监听器 (使用事件委托)
+    addTableEventListeners(tbody);
+
+    // 添加文件夹链接的点击事件
+    tbody.querySelectorAll('.folder-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // 阻止冒泡到行点击事件
+            loadFiles(link.dataset.path);
+        });
+    });
+  }
+
+  // 添加表格事件监听器 (使用事件委托)
+  function addTableEventListeners(tbody) {
+    tbody.addEventListener('change', (event) => {
+      if (event.target.matches('.file-checkbox')) {
+        handleCheckboxChange(event.target);
+      }
+    });
+
+    tbody.addEventListener('click', (event) => {
+      const target = event.target;
+      const fileRow = target.closest('tr');
+      if (!fileRow) return;
+
+      const fileId = fileRow.dataset.fileId;
+      const fileUrl = fileRow.dataset.fileUrl;
+      const fileName = fileRow.dataset.fileName;
+      const fileType = fileRow.dataset.fileType;
+      const filePath = fileRow.dataset.filePath; // 获取文件或目录路径
+
+       // 预览按钮点击事件 (保留按钮，以防用户习惯)
+       if (target.closest('.preview-btn')) {
+         if (fileType !== 'directory') {
+           showFilePreview(fileUrl, fileType, fileName);
+         }
+       }
+
+      // 删除按钮点击事件
+      if (target.closest('.delete-btn')) {
+        if (confirm(`确定要删除 ${fileType === 'directory' ? '目录' : '文件'} "${fileName}" 吗？`)) {
+          if (fileType === 'directory') {
+            deleteDirectory(filePath); // 使用路径删除目录
+          } else {
+            deleteFile(fileId); // 使用ID删除文件
+          }
         }
       }
-      
-      tbody.appendChild(tr);
+
+      // 复制链接按钮点击事件
+      if (target.closest('.copy-link')) {
+        copyToClipboard(fileUrl);
+        alert('链接已复制到剪贴板');
+      }
+
+      // 下载按钮点击事件 (仅文件)
+      if (target.closest('.download-btn') && fileType !== 'directory') {
+        // 创建一个隐藏的链接并模拟点击来下载文件
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = fileName; // 设置下载的文件名
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // 文件夹链接点击事件 (已在 renderFileList 中单独处理)
+      // if (target.closest('.folder-link')) {
+      //   loadFiles(filePath); // 使用路径加载目录
+      // }
     });
-    
-    table.appendChild(tbody);
-    
-    // 添加到文件列表
-    fileList.innerHTML = '';
-    fileList.appendChild(table);
-    
-    // 添加可预览行的样式
-    const style = document.createElement('style');
-    style.textContent = `
-      .previewable-row {
-        cursor: pointer;
-      }
-      .previewable-row:hover {
-        background-color: #f0f4ff !important;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // 添加全选事件处理
-    const selectAllCheckbox = document.getElementById('select-all');
+
+    // 全选复选框事件
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
     if (selectAllCheckbox) {
       selectAllCheckbox.addEventListener('change', () => {
-        const checkboxes = document.querySelectorAll('.file-select');
+        const checkboxes = tbody.querySelectorAll('.file-checkbox');
         checkboxes.forEach(checkbox => {
           checkbox.checked = selectAllCheckbox.checked;
-          
-          const fileId = checkbox.dataset.id;
-          if (selectAllCheckbox.checked) {
-            // 添加到选中列表
-            if (!selectedFiles.includes(fileId)) {
-              selectedFiles.push(fileId);
-            }
-          } else {
-            // 清空选中列表
-            selectedFiles = [];
-          }
+          handleCheckboxChange(checkbox);
         });
-        
-        // 更新删除按钮状态
-        updateDeleteSelectedButton();
       });
     }
-    
-    // 添加事件处理
-    document.querySelectorAll('.open-dir').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        loadFiles(btn.dataset.path);
-      });
-    });
-    
-    document.querySelectorAll('.delete-dir').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        if (confirm(`确定要删除目录 "${btn.dataset.path}" 及其所有内容吗？`)) {
-          deleteDirectory(btn.dataset.path);
-        }
-      });
-    });
-    
-    document.querySelectorAll('.copy-url').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        copyToClipboard(btn.dataset.url);
-        btn.innerHTML = '<i class="fas fa-check"></i>';
-        setTimeout(() => {
-          btn.innerHTML = '<i class="fas fa-copy"></i>';
-        }, 2000);
-      });
-    });
-    
-    document.querySelectorAll('.delete-file').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        if (confirm('确定要删除此文件吗？')) {
-          deleteFile(btn.dataset.id);
-        }
-      });
-    });
-    
-    // 添加多选框事件处理
-    document.querySelectorAll('.file-select').forEach(checkbox => {
-      checkbox.addEventListener('change', (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        const fileId = checkbox.dataset.id;
-        
-        if (checkbox.checked) {
-          // 添加到选中列表
-          if (!selectedFiles.includes(fileId)) {
-            selectedFiles.push(fileId);
-          }
-        } else {
-          // 从选中列表移除
-          const index = selectedFiles.indexOf(fileId);
-          if (index !== -1) {
-            selectedFiles.splice(index, 1);
-          }
-        }
-        
-        // 更新删除按钮状态
-        updateDeleteSelectedButton();
-      });
-      
-      // 防止点击复选框时触发行点击事件
-      checkbox.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    });
-    
-    // 添加行点击事件处理（点击整行预览文件）
-    document.querySelectorAll('.previewable-row').forEach(row => {
-      row.addEventListener('click', (e) => {
-        // 如果点击的是复选框或按钮，不触发预览
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-          return;
-        }
-        
-        showFilePreview(row.dataset.url, row.dataset.type, row.dataset.name);
-      });
-    });
+  }
+
+  // 处理单个复选框变化
+  function handleCheckboxChange(checkbox) {
+    const fileId = checkbox.value;
+    if (checkbox.checked) {
+      if (!selectedFiles.includes(fileId)) {
+        selectedFiles.push(fileId);
+      }
+    } else {
+      selectedFiles = selectedFiles.filter(id => id !== fileId);
+    }
+    updateDeleteSelectedButton();
+    updateSelectAllCheckbox(); // 更新全选框状态
+  }
+
+  // 更新全选复选框的状态
+  function updateSelectAllCheckbox() {
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const fileCheckboxes = document.querySelectorAll('.file-checkbox');
+    if (!selectAllCheckbox || fileCheckboxes.length === 0) return;
+
+    const allSelected = Array.from(fileCheckboxes).every(cb => cb.checked);
+    const someSelected = Array.from(fileCheckboxes).some(cb => cb.checked);
+
+    selectAllCheckbox.checked = allSelected;
+    selectAllCheckbox.indeterminate = !allSelected && someSelected;
+  }
+
+
+  // 获取文件图标
+  function getFileIcon(fileType) {
+    if (fileType === 'directory') {
+      return '<i class="fas fa-folder file-icon" style="color: #ffca28;"></i>'; // 黄色文件夹
+    }
+    if (fileType && fileType.startsWith('image/')) {
+      return '<i class="fas fa-file-image file-icon" style="color: #42a5f5;"></i>'; // 蓝色图片
+    } else if (fileType && fileType.startsWith('video/')) {
+      return '<i class="fas fa-file-video file-icon" style="color: #ef5350;"></i>'; // 红色视频
+    } else if (fileType && fileType.startsWith('audio/')) {
+      return '<i class="fas fa-file-audio file-icon" style="color: #ab47bc;"></i>'; // 紫色音频
+    } else if (fileType === 'application/pdf') {
+      return '<i class="fas fa-file-pdf file-icon" style="color: #ef5350;"></i>'; // 红色PDF
+    } else if (fileType === 'text/plain' || fileType === 'application/json' || fileType === 'application/xml') {
+        return '<i class="fas fa-file-alt file-icon" style="color: #66bb6a;"></i>'; // 绿色文本
+    } else if (fileType && (fileType.includes('zip') || fileType.includes('compressed'))) {
+        return '<i class="fas fa-file-archive file-icon" style="color: #bdbdbd;"></i>'; // 灰色压缩文件
+    }
+    return '<i class="fas fa-file file-icon" style="color: #78909c;"></i>'; // 默认文件图标
+  }
+
+  // 格式化文件大小
+  function formatFileSize(bytes) {
+    if (bytes === 0 || bytes === undefined || bytes === null) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
   
   // 创建预览模态框
