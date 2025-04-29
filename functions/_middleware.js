@@ -22,9 +22,9 @@ export async function onRequest(context) {
       if (!authHeader || !authHeader.startsWith('Basic ')) {
         return new Response('Unauthorized', {
           status: 401,
-          headers: {
-            'WWW-Authenticate': 'Basic realm="Admin Area"'
-          }
+          // headers: {
+          //  'WWW-Authenticate': 'Basic realm="Admin Area"'
+          // }
         });
       }
       
@@ -35,9 +35,9 @@ export async function onRequest(context) {
       if (username !== basicUser || password !== basicPass) {
         return new Response('Unauthorized', {
           status: 401,
-          headers: {
-            'WWW-Authenticate': 'Basic realm="Admin Area"'
-          }
+          // headers: {
+          //  'WWW-Authenticate': 'Basic realm="Admin Area"'
+          // }
         });
       }
     }
