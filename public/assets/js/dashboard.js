@@ -305,11 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAudio = file.mimeType && file.mimeType.startsWith('audio/');
         const fileIcon = isImage ? 'far fa-image' : (isVideo ? 'fas fa-film' : (isAudio ? 'fas fa-music' : (file.fileType || 'fas fa-file')));
         
-        // 添加预览按钮
-        const previewBtn = isImage || isVideo || isAudio ? 
-          `<button class="action-btn preview-file" data-url="${file.url}" data-type="${file.mimeType}" data-name="${file.name}" title="预览">
-            <i class="fas fa-eye"></i>
-          </button>` : '';
         
         tr.innerHTML = `
           <td class="checkbox-cell">
