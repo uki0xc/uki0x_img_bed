@@ -505,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 添加ESC键关闭
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.style.display === 'flex') {
+      if (e.keyCode === '27' && modal.style.display === 'flex') {
         closePreview();
       }
     });
