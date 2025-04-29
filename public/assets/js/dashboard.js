@@ -423,14 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
     
-    // 添加预览按钮事件处理
-    document.querySelectorAll('.preview-file').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        showFilePreview(btn.dataset.url, btn.dataset.type, btn.dataset.name);
-      });
-    });
-    
     // 添加多选框事件处理
     document.querySelectorAll('.file-select').forEach(checkbox => {
       checkbox.addEventListener('change', (e) => {
