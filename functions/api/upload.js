@@ -98,6 +98,34 @@ export async function onRequest(context) {
 
   telegramFormData.append(fileParamName, file);
 
+  // Define Telegram file size limits (in bytes)
+  const TELEGRAM_LIMIT_DOCUMENT = 50 * 1024 * 1024; // 50 MB
+  const TELEGRAM_LIMIT_PHOTO = 10 * 1024 * 1024; // 10 MB
+  const TELEGRAM_LIMIT_VIDEO_AUDIO_ANIMATION = 50 * 1024 * 1024; // 50 MB (Standard API)
+  // Note: Video can be up to 2GB with local Bot API server, but we assume standard limits here.
+
+  // Check file size before attempting upload
+  let fileSizeLimit = TELEGRAM_LIMIT_DOCUMENT; // Default for documents
+  if (apiEndpoint === "sendPhoto") {
+      fileSizeLimit = TELEGRAM_LIMIT_PHOTO;
+  } else if (["sendVideo", "sendAudio", "sendAnimation"].includes(apiEndpoint)) {
+      fileSizeLimit = TELEGRAM_LIMIT_VIDEO_AUDIO_ANIMATION;
+  }
+
+  if (file.size > fileSizeLimit) {
+      console.error(`File size ${file.size} exceeds the limit of ${fileSizeLimit} bytes for ${apiEndpoint}.`);
+      return new Response(
+          JSON.stringify({ error: `File size exceeds the limit (${Math.floor(fileSizeLimit / 1024 / 1024)}MB) for this file type.` }),
+          {
+              status: 413, // Payload Too Large
+              headers: {
+                  "Content-Type": "application/json",
+                  "Access-Control-Allow-Origin": "*",
+              },
+          }
+      );
+  }
+
   try {
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TG_BOT_TOKEN}/${apiEndpoint}`,
@@ -214,8 +242,19 @@ export async function onRequest(context) {
       }
     );
   } catch (error) {
+    // Log the detailed error
+    console.error("Error uploading file to Telegram or processing response:", error);
+    
+    // Try to get a more specific error message
+    let errorMessage = "Failed to upload file";
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    } else if (typeof error === 'string') {
+        errorMessage = error;
+    }
+
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to upload file" }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: {
