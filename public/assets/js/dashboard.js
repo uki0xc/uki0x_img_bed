@@ -300,8 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
       }
 
-      // 文件大小处理逻辑 (保持不变，依赖 formatFileSize)
-      const fileSizeDisplay = file.type === 'directory' ? '-' : formatFileSize(file.size);
+      // 文件大小处理逻辑 (修正：使用 file.rawSize)
+      const fileSizeDisplay = file.type === 'directory' ? '-' : formatFileSize(file.rawSize);
 
       tr.innerHTML = `
         <td class="checkbox-cell"><input type="checkbox" class="file-checkbox" value="${file.id}"></td>
