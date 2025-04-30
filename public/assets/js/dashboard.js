@@ -57,9 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 当前目录
   let currentDirectory = '';
   
-  // 创建预览模态框
-  createPreviewModal();
-  
   // 检查认证状态
   async function checkAuthStatus() {
     try {
@@ -485,57 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Calculate size in the determined unit and format it
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-  
-  // 创建预览模态框
-  function createPreviewModal() {
-    // 检查是否已存在预览模态框
-    if (document.getElementById('preview-modal')) {
-      // 如果已存在，确保相关元素的引用是最新的
-      previewModal = document.getElementById('preview-modal');
-      previewCloseBtn = document.getElementById('preview-close');
-      previewContent = document.getElementById('preview-content');
-      // 确保事件监听器已附加 (已在外部处理)
-      return;
-    }
-
-    // (以下代码理论上不再执行，因为模态框已存在于HTML中)
-    console.warn("Dynamically creating preview modal - this shouldn't happen if HTML is correct.");
-    // 创建模态框
-    const modal = document.createElement('div');
-    modal.id = 'preview-modal';
-    modal.className = 'modal';
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title">文件预览</h2>
-          <button class="modal-close" id="preview-close">&times;</button>
-        </div>
-        <div class="modal-body" id="preview-content">
-          <!-- 预览内容将在这里动态生成 -->
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    // 获取动态创建的元素引用
-    previewModal = modal;
-    previewCloseBtn = modal.querySelector('.modal-close');
-    previewContent = modal.querySelector('#preview-content');
-
-    // 为动态创建的关闭按钮添加监听器
-    if (previewCloseBtn) {
-      previewCloseBtn.addEventListener('click', closePreview);
-    }
-
-    // 为动态创建的模态框背景添加监听器
-    if (previewModal) {
-      previewModal.addEventListener('click', (event) => {
-        if (event.target === previewModal) {
-          closePreview();
-        }
-      });
-    }
   }
   
   // 显示文件预览
