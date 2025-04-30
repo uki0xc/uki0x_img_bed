@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteSelectedBtn = document.getElementById('delete-selected-btn');
   const loadingIndicator = document.getElementById('loading');
   const noFilesMessage = document.getElementById('no-files');
+  // 获取预览模态框相关元素
+  const previewModal = document.getElementById('preview-modal');
+  const previewCloseBtn = document.getElementById('preview-close');
+  const previewContent = document.getElementById('preview-content');
   
   // 存储选中的文件ID
   let selectedFiles = [];
@@ -292,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <a href="${file.url}" target="_blank" title="在新标签页打开" class="action-btn open-link"><i class="fas fa-external-link-alt"></i></a>
           <button class="action-btn copy-link" title="复制链接"><i class="fas fa-copy"></i></button>
         </td>
-        <td>${formatFileSize(file.size)}</td>
+        <td>${file.type === 'directory' ? '-' : formatFileSize(file.size)}</td>
         <td>${formattedDate}</td>
         <td class="file-ip">${file.uploadIP || 'N/A'}</td>
         <td class="action-cell">
@@ -467,10 +471,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 格式化文件大小
   function formatFileSize(bytes) {
-    if (bytes === 0 || bytes === undefined || bytes === null) return '0 B';
+    // Handle non-numeric types, NaN, null, undefined, and negative values
+    if (typeof bytes !== 'number' || isNaN(bytes) || bytes < 0 || bytes === null || bytes === undefined) {
+      return '-'; // Return '-' for invalid or non-applicable sizes
+    }
+    if (bytes === 0) return '0 B';
+
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']; // Add more units if needed (PB, EB, ...)
+
+    // Calculate index, handle edge cases like 0 or very large numbers safely
+    const i = Math.max(0, Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1));
+
+    // Calculate size in the determined unit and format it
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
   
@@ -478,9 +491,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function createPreviewModal() {
     // 检查是否已存在预览模态框
     if (document.getElementById('preview-modal')) {
+      // 如果已存在，确保相关元素的引用是最新的
+      previewModal = document.getElementById('preview-modal');
+      previewCloseBtn = document.getElementById('preview-close');
+      previewContent = document.getElementById('preview-content');
+      // 确保事件监听器已附加 (已在外部处理)
       return;
     }
-    
+
+    // (以下代码理论上不再执行，因为模态框已存在于HTML中)
+    console.warn("Dynamically creating preview modal - this shouldn't happen if HTML is correct.");
     // 创建模态框
     const modal = document.createElement('div');
     modal.id = 'preview-modal';
@@ -496,124 +516,34 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
     `;
-    
-    // 添加到body
     document.body.appendChild(modal);
-    
-    // 添加关闭按钮事件
-    document.getElementById('preview-close').addEventListener('click', () => {
-      closePreview();
-    });
-    
-    // 点击模态框外部关闭
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        closePreview();
-      }
-    });
-    
-    // 添加ESC键关闭
-    document.addEventListener('keydown', (e) => {
-      if (e.keyCode === '27' && modal.style.display === 'flex') {
-        closePreview();
-      }
-    });
-    
-    // 添加模态框样式
-    const style = document.createElement('style');
-    style.textContent = `
-      .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-      }
-      
-      .modal-content {
-        background-color: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        width: 90%;
-        max-width: 800px;
-        max-height: 90vh;
-        overflow: auto;
-        position: relative;
-      }
-      
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-      }
-      
-      .modal-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-      }
-      
-      .modal-close {
-        background: none;
-        border: none;
-        font-size: 1.8rem;
-        cursor: pointer;
-        color: #666;
-      }
-      
-      .modal-close:hover {
-        color: #f44336;
-      }
-      
-      .modal-body {
-        padding: 20px;
-        text-align: center;
-      }
-      
-      .preview-image {
-        max-width: 100%;
-        max-height: 70vh;
-        border-radius: 4px;
-      }
-      
-      .preview-video {
-        max-width: 100%;
-        max-height: 70vh;
-        border-radius: 4px;
-      }
-      
-      .preview-audio {
-        width: 100%;
-        margin: 20px 0;
-      }
-      
-      .preview-error {
-        color: #f44336;
-        font-size: 1.2rem;
-        margin: 20px 0;
-      }
-      
-      .preview-loading {
-        font-size: 2rem;
-        color: #4361ee;
-        margin: 20px 0;
-      }
-    `;
-    
-    document.head.appendChild(style);
+
+    // 获取动态创建的元素引用
+    previewModal = modal;
+    previewCloseBtn = modal.querySelector('.modal-close');
+    previewContent = modal.querySelector('#preview-content');
+
+    // 为动态创建的关闭按钮添加监听器
+    if (previewCloseBtn) {
+      previewCloseBtn.addEventListener('click', closePreview);
+    }
+
+    // 为动态创建的模态框背景添加监听器
+    if (previewModal) {
+      previewModal.addEventListener('click', (event) => {
+        if (event.target === previewModal) {
+          closePreview();
+        }
+      });
+    }
   }
   
   // 显示文件预览
   function showFilePreview(url, type, name) {
-    const modal = document.getElementById('preview-modal');
-    const previewContent = document.getElementById('preview-content');
+    if (!previewModal || !previewContent) {
+      console.error("Preview modal or content element not found!");
+      return;
+    }
     
     // 设置模态框标题
     document.querySelector('.modal-title').textContent = `预览: ${name}`;
@@ -622,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     previewContent.innerHTML = '<div class="preview-loading"><i class="fas fa-spinner fa-spin"></i></div>';
     
     // 显示模态框
-    modal.style.display = 'flex';
+    previewModal.style.display = 'flex';
     
     // 根据文件类型生成预览内容
     if (type && type.startsWith('image/')) {
@@ -673,20 +603,32 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 关闭预览
   function closePreview() {
-    const modal = document.getElementById('preview-modal');
-    modal.style.display = 'none';
-    
-    // 停止可能正在播放的媒体
-    const videos = document.querySelectorAll('.preview-video');
-    const audios = document.querySelectorAll('.preview-audio');
-    
-    videos.forEach(video => {
-      video.pause();
+    if (previewModal) {
+      previewModal.style.display = 'none';
+      // 清空内容，防止音视频继续播放
+      if (previewContent) {
+        previewContent.innerHTML = '';
+      }
+    }
+  }
+  
+  // 为静态模态框的关闭按钮添加事件监听器
+  if (previewCloseBtn) {
+    previewCloseBtn.addEventListener('click', closePreview);
+  } else {
+    console.error("Preview modal close button (#preview-close) not found!");
+  }
+
+  // 为模态框背景添加点击关闭事件监听器
+  if (previewModal) {
+    previewModal.addEventListener('click', (event) => {
+      // 如果点击事件的目标是模态框本身 (即背景)，则关闭
+      if (event.target === previewModal) {
+        closePreview();
+      }
     });
-    
-    audios.forEach(audio => {
-      audio.pause();
-    });
+  } else {
+    console.error("Preview modal element (#preview-modal) not found!");
   }
   
   // 更新删除选中按钮状态
