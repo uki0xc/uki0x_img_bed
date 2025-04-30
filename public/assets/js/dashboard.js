@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 渲染文件列表
       if (data.success && data.files && data.files.length > 0) {
-        renderFileList(data);
+        renderFileList(data.files);
       } else {
         noFilesMessage.style.display = 'block';
       }
@@ -246,8 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // 渲染文件列表
-  function renderFileList(data) {
-    if (!data.files || data.files.length === 0) {
+  function renderFileList(files) {
+    if (!fileList) return;
+    if (!files || files.length === 0) {
       noFilesMessage.style.display = 'block';
       fileList.innerHTML = ''; // 确保在没有文件时清空列表
       return;
@@ -273,31 +274,48 @@ document.addEventListener('DOMContentLoaded', () => {
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
-    data.files.forEach(file => {
+    files.forEach(file => {
+      // 添加日志，检查每个文件的数据
+      console.log(`Rendering file: Name=${file.name}, Type=${file.type}, Size=${file.size}`);
+
       const tr = document.createElement('tr');
-      tr.dataset.fileId = file.id; // 使用文件ID作为标识
+      tr.dataset.fileId = file.id;
       tr.dataset.fileUrl = file.url;
       tr.dataset.fileName = file.name;
-      tr.dataset.fileType = file.type; // 添加文件类型
-      tr.dataset.filePath = file.path; // 添加文件路径 (用于删除或导航)
+      tr.dataset.fileType = file.type;
+      tr.dataset.filePath = file.path;
 
-      // 格式化日期
-      const uploadDate = new Date(file.uploadTime);
-      const formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`;
+      // 格式化日期 (添加健壮性检查)
+      let formattedDate = 'N/A';
+      if (file.uploadTime) {
+          try {
+            const uploadDate = new Date(file.uploadTime);
+            if (!isNaN(uploadDate.getTime())) { // 检查日期是否有效
+                formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`;
+            } else {
+                console.warn(`Invalid date format for file ${file.name}: ${file.uploadTime}`);
+            }
+          } catch (e) {
+              console.error(`Error parsing date for file ${file.name}:`, file.uploadTime, e);
+          }
+      }
+
+      // 文件大小处理逻辑 (保持不变，依赖 formatFileSize)
+      const fileSizeDisplay = file.type === 'directory' ? '-' : formatFileSize(file.size);
 
       tr.innerHTML = `
         <td class="checkbox-cell"><input type="checkbox" class="file-checkbox" value="${file.id}"></td>
         <td class="file-type-cell">${getFileIcon(file.type)}</td>
         <td class="file-name">
-          ${file.type === 'directory' ? `<a href="#" class="folder-link" data-path="${file.path}">${file.name}</a>` : file.name}
+          ${file.type === 'directory' ? `<a href="#" class="folder-link" data-path="${file.path}">${file.name}</a>` : `<span class="file-text-name">${file.name}</span>`}
           <a href="${file.url}" target="_blank" title="在新标签页打开" class="action-btn open-link"><i class="fas fa-external-link-alt"></i></a>
           <button class="action-btn copy-link" title="复制链接"><i class="fas fa-copy"></i></button>
         </td>
-        <td>${file.type === 'directory' ? '-' : formatFileSize(file.size)}</td>
+        <td>${fileSizeDisplay}</td>
         <td>${formattedDate}</td>
         <td class="file-ip">${file.uploadIP || 'N/A'}</td>
         <td class="action-cell">
-          <button class="action-btn preview-btn" title="预览"><i class="fas fa-eye"></i></button>
+          ${file.type !== 'directory' ? `<button class="action-btn preview-btn" title="预览"><i class="fas fa-eye"></i></button>` : ''}
           ${file.type !== 'directory' ? `<button class="action-btn download-btn" title="下载"><i class="fas fa-download"></i></button>` : ''}
           <button class="action-btn delete-btn" title="删除"><i class="fas fa-trash-alt"></i></button>
         </td>
@@ -306,20 +324,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 为整行添加点击事件监听器以触发预览
       tr.addEventListener('click', (event) => {
-        // 检查点击目标是否是行本身或允许触发预览的子元素 (例如文件名)
-        // 阻止在点击复选框、操作按钮或文件夹链接时触发预览
         const target = event.target;
-        const isInteractiveElement = target.closest('input[type="checkbox"], .action-btn, .folder-link');
-
-        if (!isInteractiveElement) {
-          // 只有非目录文件才能预览
-          if (file.type !== 'directory') {
-             // 使用 file.url, file.type, file.name 调用预览函数
+        const isInteractiveElement = target.closest('input[type="checkbox"], .action-btn, .folder-link, a');
+        if (!isInteractiveElement && file.type !== 'directory') {
              showFilePreview(file.url, file.type, file.name);
-          }
         }
       });
-
 
     }); // 结束 forEach
 
@@ -331,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSelectAllCheckbox();
 
     // 添加事件监听器 (使用事件委托)
-    addTableEventListeners(tbody);
+    addTableEventListeners(table);
 
     // 添加文件夹链接的点击事件
     tbody.querySelectorAll('.folder-link').forEach(link => {
@@ -344,83 +354,102 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 添加表格事件监听器 (使用事件委托)
-  function addTableEventListeners(tbody) {
-    tbody.addEventListener('change', (event) => {
-      if (event.target.matches('.file-checkbox')) {
-        handleCheckboxChange(event.target);
+  function addTableEventListeners(table) {
+    table.removeEventListener('change', handleTableChange);
+    table.removeEventListener('click', handleTableClick);
+
+    table.addEventListener('change', handleTableChange);
+    table.addEventListener('click', handleTableClick);
+
+    const selectAllCheckbox = table.querySelector('#select-all-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.removeEventListener('change', handleSelectAllChange);
+        selectAllCheckbox.addEventListener('change', handleSelectAllChange);
+    }
+  }
+
+  function handleTableChange(event) {
+    if (event.target.matches('.file-checkbox')) {
+      handleCheckboxChange(event.target);
+    }
+  }
+
+  function handleSelectAllChange(event) {
+    const isChecked = event.target.checked;
+    const table = event.target.closest('table');
+    if (!table) return;
+    const checkboxes = table.querySelectorAll('tbody .file-checkbox');
+    checkboxes.forEach(checkbox => {
+      if (checkbox.checked !== isChecked) {
+          checkbox.checked = isChecked;
+          handleCheckboxChange(checkbox);
       }
     });
+  }
 
-    tbody.addEventListener('click', (event) => {
+  function handleTableClick(event) {
       const target = event.target;
+      const actionButton = target.closest('.action-btn');
+      const folderLink = target.closest('.folder-link');
       const fileRow = target.closest('tr');
+
       if (!fileRow) return;
 
       const fileId = fileRow.dataset.fileId;
       const fileUrl = fileRow.dataset.fileUrl;
       const fileName = fileRow.dataset.fileName;
       const fileType = fileRow.dataset.fileType;
-      const filePath = fileRow.dataset.filePath; // 获取文件或目录路径
+      const filePath = fileRow.dataset.filePath;
 
-       // 预览按钮点击事件 (保留按钮，以防用户习惯)
-       if (target.closest('.preview-btn')) {
-         if (fileType !== 'directory') {
-           showFilePreview(fileUrl, fileType, fileName);
-         }
-       }
+      if (actionButton) {
+          event.stopPropagation();
 
-      // 删除按钮点击事件
-      if (target.closest('.delete-btn')) {
-        if (confirm(`确定要删除 ${fileType === 'directory' ? '目录' : '文件'} "${fileName}" 吗？`)) {
-          if (fileType === 'directory') {
-            deleteDirectory(filePath); // 使用路径删除目录
-          } else {
-            deleteFile(fileId); // 使用ID删除文件
+          if (actionButton.classList.contains('preview-btn')) {
+            if (fileType !== 'directory') {
+              showFilePreview(fileUrl, fileType, fileName);
+            }
           }
-        }
+          else if (actionButton.classList.contains('delete-btn')) {
+            const confirmMessage = fileType === 'directory'
+              ? `确定要删除目录 "${fileName}" 及其所有内容吗？此操作不可恢复！`
+              : `确定要删除文件 "${fileName}" 吗？`;
+            if (confirm(confirmMessage)) {
+              if (fileType === 'directory') {
+                deleteDirectory(filePath);
+              } else {
+                deleteFile(fileId);
+              }
+            }
+          }
+          else if (actionButton.classList.contains('copy-link')) {
+            copyToClipboard(fileUrl);
+            alert('链接已复制到剪贴板');
+          }
+          else if (actionButton.classList.contains('download-btn')) {
+            if (fileType !== 'directory') {
+              const link = document.createElement('a');
+              link.href = fileUrl;
+              link.download = fileName;
+              link.style.display = 'none';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          }
       }
-
-      // 复制链接按钮点击事件
-      if (target.closest('.copy-link')) {
-        copyToClipboard(fileUrl);
-        alert('链接已复制到剪贴板');
+      else if (folderLink) {
+          event.preventDefault();
+          event.stopPropagation();
+          loadFiles(filePath);
       }
-
-      // 下载按钮点击事件 (仅文件)
-      if (target.closest('.download-btn') && fileType !== 'directory') {
-        // 创建一个隐藏的链接并模拟点击来下载文件
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = fileName; // 设置下载的文件名
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-
-      // 文件夹链接点击事件 (已在 renderFileList 中单独处理)
-      // if (target.closest('.folder-link')) {
-      //   loadFiles(filePath); // 使用路径加载目录
-      // }
-    });
-
-    // 全选复选框事件
-    const selectAllCheckbox = document.getElementById('select-all-checkbox');
-    if (selectAllCheckbox) {
-      selectAllCheckbox.addEventListener('change', () => {
-        const checkboxes = tbody.querySelectorAll('.file-checkbox');
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = selectAllCheckbox.checked;
-          handleCheckboxChange(checkbox);
-        });
-      });
-    }
   }
 
   // 处理单个复选框变化
   function handleCheckboxChange(checkbox) {
     const fileId = checkbox.value;
-    if (checkbox.checked) {
+    const isChecked = checkbox.checked;
+
+    if (isChecked) {
       if (!selectedFiles.includes(fileId)) {
         selectedFiles.push(fileId);
       }
@@ -434,16 +463,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // 更新全选复选框的状态
   function updateSelectAllCheckbox() {
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
-    const fileCheckboxes = document.querySelectorAll('.file-checkbox');
+    const fileCheckboxes = fileList ? fileList.querySelectorAll('tbody .file-checkbox') : [];
     if (!selectAllCheckbox || fileCheckboxes.length === 0) return;
 
-    const allSelected = Array.from(fileCheckboxes).every(cb => cb.checked);
-    const someSelected = Array.from(fileCheckboxes).some(cb => cb.checked);
+    const totalCheckboxes = fileCheckboxes.length;
 
-    selectAllCheckbox.checked = allSelected;
-    selectAllCheckbox.indeterminate = !allSelected && someSelected;
+    if (totalCheckboxes === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        return;
+    }
+
+    const allVisibleSelected = Array.from(fileCheckboxes).every(cb => cb.checked);
+    const someVisibleSelected = Array.from(fileCheckboxes).some(cb => cb.checked);
+
+    selectAllCheckbox.checked = allVisibleSelected;
+    selectAllCheckbox.indeterminate = !allVisibleSelected && someVisibleSelected;
   }
-
 
   // 获取文件图标
   function getFileIcon(fileType) {
@@ -549,18 +585,27 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 关闭预览
   function closePreview() {
+    console.log('Attempting to close preview modal...'); // 添加日志
     if (previewModal) {
       previewModal.style.display = 'none';
       // 清空内容，防止音视频继续播放
       if (previewContent) {
         previewContent.innerHTML = '';
+        console.log('Preview modal closed and content cleared.'); // 添加日志
       }
+    } else {
+        console.error('closePreview called but previewModal element not found!');
     }
   }
   
   // 为静态模态框的关闭按钮添加事件监听器
   if (previewCloseBtn) {
-    previewCloseBtn.addEventListener('click', closePreview);
+    previewCloseBtn.addEventListener('click', (event) => {
+        console.log('Preview close button clicked!'); // 添加日志
+        event.stopPropagation(); // 防止事件冒泡到 modal 背景的监听器
+        closePreview();
+    });
+    console.log('Close button event listener added.'); // 添加日志
   } else {
     console.error("Preview modal close button (#preview-close) not found!");
   }
@@ -570,9 +615,21 @@ document.addEventListener('DOMContentLoaded', () => {
     previewModal.addEventListener('click', (event) => {
       // 如果点击事件的目标是模态框本身 (即背景)，则关闭
       if (event.target === previewModal) {
+        console.log('Preview modal background clicked!'); // 添加日志
         closePreview();
       }
     });
+    console.log('Modal background click listener added.'); // 添加日志
+
+    // 3. 添加 ESC 键关闭监听器 (添加到 document)
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && previewModal.style.display === 'flex') {
+        console.log('Escape key pressed, closing preview modal.'); // 添加日志
+        closePreview();
+      }
+    });
+    console.log('Escape keydown listener added to document.'); // 添加日志
+
   } else {
     console.error("Preview modal element (#preview-modal) not found!");
   }
@@ -701,11 +758,51 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 复制到剪贴板
   function copyToClipboard(text) {
-    const input = document.createElement('input');
-    document.body.appendChild(input);
-    input.value = text;
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
+    if (navigator.clipboard && window.isSecureContext) {
+        // 使用 Clipboard API (更现代、安全，需要HTTPS或localhost)
+        navigator.clipboard.writeText(text).then(() => {
+            console.log('Link copied to clipboard via Clipboard API.');
+            // 可选：显示一个短暂的成功提示，比 alert 更好
+            // showToast('链接已复制!');
+        }).catch(err => {
+            console.error('Clipboard API failed: ', err);
+            fallbackCopyTextToClipboard(text); // 尝试后备方法
+        });
+    } else {
+        // 后备方法 (适用于HTTP或旧浏览器)
+        fallbackCopyTextToClipboard(text);
+    }
+  }
+
+  function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = 'fixed'; // 避免页面滚动
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em'; // 设为足够小但仍可聚焦
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        console.log('Fallback: Link copied to clipboard via execCommand.');
+        // showToast('链接已复制!');
+      } else {
+        console.error('Fallback: execCommand("copy") failed.');
+        alert('无法自动复制链接，请手动复制。');
+      }
+    } catch (err) {
+      console.error('Fallback: Error during execCommand("copy"):', err);
+      alert('无法自动复制链接，请手动复制。');
+    }
+    document.body.removeChild(textArea);
   }
 });
