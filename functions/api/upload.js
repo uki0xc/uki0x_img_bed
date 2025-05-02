@@ -1,3 +1,8 @@
+// functions/api/upload.js
+
+// 注意：这个版本包含了生成动态 URL 和固定域名 URL 的修改
+// 并且依赖于您在代码中定义的 generateRandomString 和 getFileExtension 辅助函数
+
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -12,20 +17,12 @@ export async function onRequest(context) {
     });
   }
 
-  // 检查请求路径是否为 /api/upload
+  // 检查请求路径是否为 /api/upload (可选，根据您的路由设置)
   const url = new URL(request.url);
-  const pathSegments = url.pathname.split('/');
-  const lastSegment = pathSegments[pathSegments.length - 1];
-  
-  if (lastSegment !== "upload") {
-    return new Response(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  }
+  // 如果您确定此函数只处理 /api/upload，可以省略路径检查
+  // const pathSegments = url.pathname.split('/');
+  // const lastSegment = pathSegments[pathSegments.length - 1];
+  // if (lastSegment !== "upload") { ... }
 
   // 检查是否为 POST 请求
   if (request.method !== "POST") {
@@ -86,47 +83,49 @@ export async function onRequest(context) {
     apiEndpoint = "sendAudio";
     fileParamName = "audio";
   } else if (mimeType.startsWith('image/')) {
+    // 优先使用 sendPhoto 以获得更好的压缩和预览
     apiEndpoint = "sendPhoto";
     fileParamName = "photo";
   } else if (mimeType.includes('animation') || file.name.endsWith('.gif')) {
     apiEndpoint = "sendAnimation";
     fileParamName = "animation";
   } else {
+    // 其他所有文件作为 document 发送
     apiEndpoint = "sendDocument";
     fileParamName = "document";
   }
 
   telegramFormData.append(fileParamName, file);
 
-  // Define Telegram file size limits (in bytes)
+  // 定义 Telegram 文件大小限制 (字节)
   const TELEGRAM_LIMIT_DOCUMENT = 50 * 1024 * 1024; // 50 MB
-  const TELEGRAM_LIMIT_PHOTO = 10 * 1024 * 1024; // 10 MB
-  const TELEGRAM_LIMIT_VIDEO_AUDIO_ANIMATION = 50 * 1024 * 1024; // 50 MB (Standard API)
-  // Note: Video can be up to 2GB with local Bot API server, but we assume standard limits here.
+  const TELEGRAM_LIMIT_PHOTO = 10 * 1024 * 1024; // 10 MB (单个文件限制)
+  const TELEGRAM_LIMIT_VIDEO_AUDIO_ANIMATION = 50 * 1024 * 1024; // 50 MB (标准 API)
 
-  // Check file size before attempting upload
-  let fileSizeLimit = TELEGRAM_LIMIT_DOCUMENT; // Default for documents
+  // 检查文件大小限制
+  let fileSizeLimit = TELEGRAM_LIMIT_DOCUMENT;
   if (apiEndpoint === "sendPhoto") {
-      fileSizeLimit = TELEGRAM_LIMIT_PHOTO;
+    fileSizeLimit = TELEGRAM_LIMIT_PHOTO;
   } else if (["sendVideo", "sendAudio", "sendAnimation"].includes(apiEndpoint)) {
-      fileSizeLimit = TELEGRAM_LIMIT_VIDEO_AUDIO_ANIMATION;
+    fileSizeLimit = TELEGRAM_LIMIT_VIDEO_AUDIO_ANIMATION;
   }
 
   if (file.size > fileSizeLimit) {
-      console.error(`File size ${file.size} exceeds the limit of ${fileSizeLimit} bytes for ${apiEndpoint}.`);
-      return new Response(
-          JSON.stringify({ error: `File size exceeds the limit (${Math.floor(fileSizeLimit / 1024 / 1024)}MB) for this file type.` }),
-          {
-              status: 413, // Payload Too Large
-              headers: {
-                  "Content-Type": "application/json",
-                  "Access-Control-Allow-Origin": "*",
-              },
-          }
-      );
+    console.error(`File size ${file.size} exceeds the limit of ${fileSizeLimit} bytes for ${apiEndpoint}.`);
+    return new Response(
+        JSON.stringify({ error: `File size exceeds the limit (${Math.floor(fileSizeLimit / 1024 / 1024)}MB) for this file type.` }),
+        {
+            status: 413, // Payload Too Large
+            headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+        }
+    );
   }
 
   try {
+    // 上传到 Telegram
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${TG_BOT_TOKEN}/${apiEndpoint}`,
       {
@@ -140,11 +139,11 @@ export async function onRequest(context) {
       throw new Error(`Telegram API error: ${telegramData.description}`);
     }
 
-    // 提取文件信息，根据不同的API响应结构获取文件信息
+    // 提取文件信息 (根据API响应结构)
     let fileId, fileName, fileSize, fileMimeType, fileUniqueId;
     if (apiEndpoint === "sendVideo") {
       fileId = telegramData.result.video.file_id;
-      fileName = telegramData.result.video.file_name || file.name;
+      fileName = telegramData.result.video.file_name || file.name; // 优先使用TG返回的文件名
       fileSize = telegramData.result.video.file_size;
       fileMimeType = telegramData.result.video.mime_type;
       fileUniqueId = telegramData.result.video.file_unique_id;
@@ -155,20 +154,22 @@ export async function onRequest(context) {
       fileMimeType = telegramData.result.audio.mime_type;
       fileUniqueId = telegramData.result.audio.file_unique_id;
     } else if (apiEndpoint === "sendPhoto") {
-      fileId = telegramData.result.photo[telegramData.result.photo.length - 1].file_id;
-      fileName = file.name;
-      fileSize = telegramData.result.photo[telegramData.result.photo.length - 1].file_size;
-      fileMimeType = mimeType;
-      fileUniqueId = telegramData.result.photo[telegramData.result.photo.length - 1].file_unique_id;
+      // sendPhoto 返回一个照片尺寸数组，取最大的那个
+      const largestPhoto = telegramData.result.photo[telegramData.result.photo.length - 1];
+      fileId = largestPhoto.file_id;
+      fileName = file.name; // sendPhoto 不返回文件名，使用原始文件名
+      fileSize = largestPhoto.file_size; // 通常是压缩后的大小
+      fileMimeType = mimeType; // 使用原始 MIME 类型
+      fileUniqueId = largestPhoto.file_unique_id;
     } else if (apiEndpoint === "sendAnimation") {
       fileId = telegramData.result.animation.file_id;
       fileName = telegramData.result.animation.file_name || file.name;
       fileSize = telegramData.result.animation.file_size;
       fileMimeType = telegramData.result.animation.mime_type;
       fileUniqueId = telegramData.result.animation.file_unique_id;
-    } else {
+    } else { // sendDocument
       fileId = telegramData.result.document.file_id;
-      fileName = telegramData.result.document.file_name;
+      fileName = telegramData.result.document.file_name; // document 通常会保留原始文件名
       fileSize = telegramData.result.document.file_size;
       fileMimeType = telegramData.result.document.mime_type;
       fileUniqueId = telegramData.result.document.file_unique_id;
@@ -178,66 +179,58 @@ export async function onRequest(context) {
     const metadata = {
       fileId,
       fileName,
-      fileSize,
+      fileSize, // TG返回的大小
+      originalFileSize: file.size, // 保留原始大小信息（可选）
       mimeType: fileMimeType,
       uploadDate: new Date().toISOString(),
       clientIP,
-      fileType: apiEndpoint.replace('send', '').toLowerCase()
+      fileType: apiEndpoint.replace('send', '').toLowerCase() // 'photo', 'video', 'audio', 'document', 'animation'
     };
+    // 使用 fileUniqueId 作为 KV 的 key，因为它在机器人和所有用户间唯一且稳定
     await env.FILE_STORE.put(fileUniqueId, JSON.stringify(metadata));
 
-    // 生成随机字符串
-    const generateRandomString = (length) => {
-      const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-      }
-      return result;
-    };
+    // --- URL 生成部分 ---
+    // 1. 生成随机字符串
+    const randomValue = generateRandomString(12); // 12位随机字符串
 
-    // 提取文件扩展名的函数
-    const getFileExtension = (filename) => {
-      if (!filename) return '';
-      const ext = filename.split('.').pop().toLowerCase();
-      // 确保exe扩展名被正确处理
-      console.log(`File extension extracted: ${ext}`);
-      return ext;
-    };
+    // 2. 提取文件扩展名
+    const fileExtension = getFileExtension(fileName); // 使用辅助函数提取
 
-    // 生成 URL，使用随机值作为唯一标识，并包含文件扩展名
-    const randomValue = generateRandomString(12); // 生成12位随机字符串
-    const fileExtension = getFileExtension(fileName);
+    // 3. 计算动态 URL (基于 Host header 或 userConfig)
+    const host = request.headers.get("host");
+    console.log(`[Upload Debug] Received Host Header: ${host}`);
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
-    
-// --- 修改开始 ---
-    // 直接指定使用哪个域名作为 URL 前缀
-    // 不再依赖 Host 头或环境变量
-    const desiredDomain = "img.vki.im"; // <--- 把你想要使用的域名写在这里
-    const urlPrefix = `https://${desiredDomain}/file/`;
-    console.log(`[Upload Info] Using hardcoded urlPrefix: ${urlPrefix}`); // 添加日志确认
-    // --- 修改结束 ---
+    console.log(`[Upload Debug] userConfig.urlPrefix exists: ${!!userConfig.urlPrefix}`);
+    // 使用 'dynamicUrlPrefix' 作为变量名以示区分
+    const dynamicUrlPrefix = userConfig.urlPrefix || `https://${host}/file/`;
+    console.log(`[Upload Debug] Calculated dynamicUrlPrefix: ${dynamicUrlPrefix}`);
+    // 生成动态 URL
+    const dynamicUrl = `${dynamicUrlPrefix}${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
+    console.log(`[Upload Debug] Generated dynamicUrl: ${dynamicUrl}`);
 
-    // 确保所有文件扩展名（包括exe）都被正确处理
-    // (注意: 确保 randomValue 和 fileExtension 变量在这之前已经定义好)
-    const fileUrl = `${urlPrefix}${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
-    console.log(`[Upload Info] Generated fileUrl: ${fileUrl}`); // 添加日志确认
-    
-    // 在KV存储中添加随机值到fileUniqueId的映射，以便[id].js可以查找
+    // 4. 计算固定 URL (使用您指定的域名)
+    const fixedDomain = "img.vki.im"; // <--- 在这里设置您想要使用的固定域名
+    const fixedUrlPrefix = `https://${fixedDomain}/file/`;
+    // 生成固定 URL
+    const fixedDomainUrl = `${fixedUrlPrefix}${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
+    console.log(`[Upload Debug] Generated fixedDomainUrl: ${fixedDomainUrl}`);
+
+    // --- 映射存储 ---
+    // 在KV存储中添加随机值到fileUniqueId的映射，以便 /file/[id].js 可以查找
+    // key: map_随机值, value: fileUniqueId
     await env.FILE_STORE.put(`map_${randomValue}`, fileUniqueId);
-    
-    console.log(`Generated URL: ${fileUrl}`);
 
-    // 返回完整的响应信息
+    // --- 返回响应 ---
     return new Response(
       JSON.stringify({
         success: true,
-        url: fileUrl,
+        url: dynamicUrl,              // 主要 URL (动态)
+        fixedUrl: fixedDomainUrl,     // 固定域名的 URL
         fileName,
-        fileSize,
+        fileSize,                     // TG 返回的文件大小
         mimeType: fileMimeType,
         fileType: apiEndpoint.replace('send', '').toLowerCase(),
-        fileUniqueId
+        fileUniqueId                  // TG 的文件唯一 ID
       }),
       {
         headers: {
@@ -247,10 +240,10 @@ export async function onRequest(context) {
       }
     );
   } catch (error) {
-    // Log the detailed error
-    console.error("Error uploading file to Telegram or processing response:", error);
-    
-    // Try to get a more specific error message
+    // 改进错误日志
+    console.error("[Upload Error] Failed to upload or process file:", error);
+
+    // 尝试获取更具体的错误信息
     let errorMessage = "Failed to upload file";
     if (error instanceof Error) {
         errorMessage = error.message;
@@ -269,4 +262,38 @@ export async function onRequest(context) {
       }
     );
   }
+}
+
+
+// --- 辅助函数 ---
+// (确保这些函数在文件作用域内可用)
+
+/**
+ * 生成指定长度的随机字符串
+ * @param {number} length - 字符串长度
+ * @returns {string} 随机字符串
+ */
+function generateRandomString(length) {
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+/**
+ * 提取文件名中的扩展名（小写）
+ * @param {string} filename - 文件名
+ * @returns {string} 文件扩展名 (不含点), 或空字符串
+ */
+function getFileExtension(filename) {
+  if (!filename || typeof filename !== 'string') return '';
+  const lastDotIndex = filename.lastIndexOf('.');
+  // 检查点号是否存在且不是文件名的第一个字符，并且后面确实有字符
+  if (lastDotIndex > 0 && lastDotIndex < filename.length - 1) {
+    return filename.substring(lastDotIndex + 1).toLowerCase();
+  }
+  return ''; // 没有有效扩展名
 }
