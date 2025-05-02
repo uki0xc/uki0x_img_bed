@@ -210,13 +210,18 @@ export async function onRequest(context) {
     const fileExtension = getFileExtension(fileName);
     const userConfig = env.USER_CONFIG ? JSON.parse(env.USER_CONFIG) : {};
     
-    // 修改URL格式为 https://www.example.com/file/随机十二位字母数字.文件后缀
-    // 使用host中的域名替代example.com
-    const host = request.headers.get("host");
-    const urlPrefix = userConfig.urlPrefix || `https://${host}/file/`;
-    
+// --- 修改开始 ---
+    // 直接指定使用哪个域名作为 URL 前缀
+    // 不再依赖 Host 头或环境变量
+    const desiredDomain = "img.vki.im"; // <--- 把你想要使用的域名写在这里
+    const urlPrefix = `https://${desiredDomain}/file/`;
+    console.log(`[Upload Info] Using hardcoded urlPrefix: ${urlPrefix}`); // 添加日志确认
+    // --- 修改结束 ---
+
     // 确保所有文件扩展名（包括exe）都被正确处理
+    // (注意: 确保 randomValue 和 fileExtension 变量在这之前已经定义好)
     const fileUrl = `${urlPrefix}${randomValue}${fileExtension ? '.' + fileExtension : ''}`;
+    console.log(`[Upload Info] Generated fileUrl: ${fileUrl}`); // 添加日志确认
     
     // 在KV存储中添加随机值到fileUniqueId的映射，以便[id].js可以查找
     await env.FILE_STORE.put(`map_${randomValue}`, fileUniqueId);
