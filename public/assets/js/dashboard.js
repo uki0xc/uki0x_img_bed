@@ -256,9 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     noFilesMessage.style.display = 'none';
 
-    // 创建表格
+    // 使用 DocumentFragment 提高性能
+    const fragment = document.createDocumentFragment();
     const table = document.createElement('table');
-    table.className = 'table table-hover'; // 添加 hover 效果
+    table.className = 'table table-hover';
+
+    // 创建表头
     const thead = document.createElement('thead');
     thead.innerHTML = `
       <tr>
@@ -273,11 +276,18 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     table.appendChild(thead);
 
-    const tbody = document.createElement('tbody');
-    files.forEach(file => {
-      // 添加日志，检查每个文件的数据
-      console.log(`Rendering file: Name=${file.name}, Type=${file.type}, Size=${file.size}`);
+    // 使用 Map 缓存文件图标
+    const iconCache = new Map();
+    const getCachedIcon = (fileType) => {
+      if (!iconCache.has(fileType)) {
+        iconCache.set(fileType, getFileIcon(fileType));
+      }
+      return iconCache.get(fileType);
+    };
 
+    // 批量创建行
+    const tbody = document.createElement('tbody');
+    const rows = files.map(file => {
       const tr = document.createElement('tr');
       tr.dataset.fileId = file.id;
       tr.dataset.fileUrl = file.url;
@@ -285,27 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
       tr.dataset.fileType = file.type;
       tr.dataset.filePath = file.path;
 
-      // 格式化日期 (添加健壮性检查)
-      let formattedDate = 'N/A';
-      if (file.uploadTime) {
-          try {
-            const uploadDate = new Date(file.uploadTime);
-            if (!isNaN(uploadDate.getTime())) { // 检查日期是否有效
-                formattedDate = `${uploadDate.getFullYear()}-${String(uploadDate.getMonth() + 1).padStart(2, '0')}-${String(uploadDate.getDate()).padStart(2, '0')} ${String(uploadDate.getHours()).padStart(2, '0')}:${String(uploadDate.getMinutes()).padStart(2, '0')}`;
-            } else {
-                console.warn(`Invalid date format for file ${file.name}: ${file.uploadTime}`);
-            }
-          } catch (e) {
-              console.error(`Error parsing date for file ${file.name}:`, file.uploadTime, e);
-          }
-      }
-
-      // 文件大小处理逻辑 (修正：使用 file.rawSize)
+      // 格式化日期
+      const formattedDate = file.uploadTime ? new Date(file.uploadTime).toLocaleString() : 'N/A';
       const fileSizeDisplay = file.type === 'directory' ? '-' : formatFileSize(file.rawSize);
 
       tr.innerHTML = `
         <td class="checkbox-cell"><input type="checkbox" class="file-checkbox" value="${file.id}"></td>
-        <td class="file-type-cell">${getFileIcon(file.type)}</td>
+        <td class="file-type-cell">${getCachedIcon(file.type)}</td>
         <td class="file-name">
           ${file.type === 'directory' ? `<a href="#" class="folder-link" data-path="${file.path}">${file.name}</a>` : `<span class="file-text-name">${file.name}</span>`}
           <a href="${file.url}" target="_blank" title="在新标签页打开" class="action-btn open-link"><i class="fas fa-external-link-alt"></i></a>
@@ -320,36 +316,41 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="action-btn delete-btn" title="删除"><i class="fas fa-trash-alt"></i></button>
         </td>
       `;
-      tbody.appendChild(tr);
 
       // 为整行添加点击事件监听器以触发预览
       tr.addEventListener('click', (event) => {
         const target = event.target;
         const isInteractiveElement = target.closest('input[type="checkbox"], .action-btn, .folder-link, a');
         if (!isInteractiveElement && file.type !== 'directory') {
-             showFilePreview(file.url, file.type, file.name);
+          showFilePreview(file.url, file.type, file.name);
         }
       });
 
-    }); // 结束 forEach
+      return tr;
+    });
 
+    // 批量添加行到 tbody
+    tbody.append(...rows);
     table.appendChild(tbody);
-    fileList.innerHTML = ''; // 清空旧内容
-    fileList.appendChild(table);
+    fragment.appendChild(table);
+
+    // 一次性更新 DOM
+    fileList.innerHTML = '';
+    fileList.appendChild(fragment);
 
     // 更新全选复选框状态
     updateSelectAllCheckbox();
 
-    // 添加事件监听器 (使用事件委托)
+    // 添加事件监听器
     addTableEventListeners(table);
 
     // 添加文件夹链接的点击事件
     tbody.querySelectorAll('.folder-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation(); // 阻止冒泡到行点击事件
-            loadFiles(link.dataset.path);
-        });
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        loadFiles(link.dataset.path);
+      });
     });
   }
 
@@ -569,6 +570,26 @@ document.addEventListener('DOMContentLoaded', () => {
           您的浏览器不支持音频预览
         </audio>
       `;
+    } else if (type === 'text/markdown' || name.endsWith('.md')) {
+      // Markdown 预览
+      fetch(url)
+        .then(response => response.text())
+        .then(markdown => {
+          // 使用 marked.js 渲染 Markdown
+          if (typeof marked !== 'undefined') {
+            previewContent.innerHTML = marked.parse(markdown);
+          } else {
+            previewContent.innerHTML = `
+              <div style="text-align: center; margin-bottom: 20px;">
+                <i class="fas fa-file-alt" style="font-size: 48px; color: #4361ee;"></i>
+              </div>
+              <pre style="white-space: pre-wrap;">${markdown}</pre>
+            `;
+          }
+        })
+        .catch(error => {
+          previewContent.innerHTML = `<div class="preview-error">加载 Markdown 文件失败</div>`;
+        });
     } else {
       // 其他文件类型
       previewContent.innerHTML = `
