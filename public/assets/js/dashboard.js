@@ -13,10 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteSelectedBtn = document.getElementById('delete-selected-btn');
   const loadingIndicator = document.getElementById('loading');
   const noFilesMessage = document.getElementById('no-files');
-  // 获取预览模态框相关元素
-  const previewModal = document.getElementById('preview-modal');
-  const previewCloseBtn = document.getElementById('preview-close');
-  const previewContent = document.getElementById('preview-content');
   
   // 存储选中的文件ID
   let selectedFiles = [];
@@ -311,20 +307,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${formattedDate}</td>
         <td class="file-ip">${file.uploadIP || 'N/A'}</td>
         <td class="action-cell">
-          ${file.type !== 'directory' ? `<button class="action-btn preview-btn" title="预览"><i class="fas fa-eye"></i></button>` : ''}
           ${file.type !== 'directory' ? `<button class="action-btn download-btn" title="下载"><i class="fas fa-download"></i></button>` : ''}
           <button class="action-btn delete-btn" title="删除"><i class="fas fa-trash-alt"></i></button>
         </td>
       `;
-
-      // 为整行添加点击事件监听器以触发预览
-      tr.addEventListener('click', (event) => {
-        const target = event.target;
-        const isInteractiveElement = target.closest('input[type="checkbox"], .action-btn, .folder-link, a');
-        if (!isInteractiveElement && file.type !== 'directory') {
-          showFilePreview(file.url, file.type, file.name);
-        }
-      });
 
       return tr;
     });
@@ -389,60 +375,55 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleTableClick(event) {
-      const target = event.target;
-      const actionButton = target.closest('.action-btn');
-      const folderLink = target.closest('.folder-link');
-      const fileRow = target.closest('tr');
+    const target = event.target;
+    const actionButton = target.closest('.action-btn');
+    const folderLink = target.closest('.folder-link');
+    const fileRow = target.closest('tr');
 
-      if (!fileRow) return;
+    if (!fileRow) return;
 
-      const fileId = fileRow.dataset.fileId;
-      const fileUrl = fileRow.dataset.fileUrl;
-      const fileName = fileRow.dataset.fileName;
-      const fileType = fileRow.dataset.fileType;
-      const filePath = fileRow.dataset.filePath;
+    const fileId = fileRow.dataset.fileId;
+    const fileUrl = fileRow.dataset.fileUrl;
+    const fileName = fileRow.dataset.fileName;
+    const fileType = fileRow.dataset.fileType;
+    const filePath = fileRow.dataset.filePath;
 
-      if (actionButton) {
-          event.stopPropagation();
+    if (actionButton) {
+      event.stopPropagation();
 
-          if (actionButton.classList.contains('preview-btn')) {
-            if (fileType !== 'directory') {
-              showFilePreview(fileUrl, fileType, fileName);
-            }
+      if (actionButton.classList.contains('delete-btn')) {
+        const confirmMessage = fileType === 'directory'
+          ? `确定要删除目录 "${fileName}" 及其所有内容吗？此操作不可恢复！`
+          : `确定要删除文件 "${fileName}" 吗？`;
+        if (confirm(confirmMessage)) {
+          if (fileType === 'directory') {
+            deleteDirectory(filePath);
+          } else {
+            deleteFile(fileId);
           }
-          else if (actionButton.classList.contains('delete-btn')) {
-            const confirmMessage = fileType === 'directory'
-              ? `确定要删除目录 "${fileName}" 及其所有内容吗？此操作不可恢复！`
-              : `确定要删除文件 "${fileName}" 吗？`;
-            if (confirm(confirmMessage)) {
-              if (fileType === 'directory') {
-                deleteDirectory(filePath);
-              } else {
-                deleteFile(fileId);
-              }
-            }
-          }
-          else if (actionButton.classList.contains('copy-link')) {
-            copyToClipboard(fileUrl);
-            alert('链接已复制到剪贴板');
-          }
-          else if (actionButton.classList.contains('download-btn')) {
-            if (fileType !== 'directory') {
-              const link = document.createElement('a');
-              link.href = fileUrl;
-              link.download = fileName;
-              link.style.display = 'none';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
-          }
+        }
       }
-      else if (folderLink) {
-          event.preventDefault();
-          event.stopPropagation();
-          loadFiles(filePath);
+      else if (actionButton.classList.contains('copy-link')) {
+        copyToClipboard(fileUrl);
+        alert('链接已复制到剪贴板');
       }
+      else if (actionButton.classList.contains('download-btn')) {
+        if (fileType !== 'directory') {
+          const link = document.createElement('a');
+          link.href = fileUrl;
+          link.download = fileName;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    }
+    else if (folderLink) {
+      event.preventDefault();
+      event.stopPropagation();
+      loadFiles(filePath);
+    }
   }
 
   // 处理单个复选框变化
@@ -519,140 +500,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Calculate size in the determined unit and format it
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-  
-  // 显示文件预览
-  function showFilePreview(url, type, name) {
-    if (!previewModal || !previewContent) {
-      console.error("Preview modal or content element not found!");
-      return;
-    }
-    
-    // 设置模态框标题
-    document.querySelector('.modal-title').textContent = `预览: ${name}`;
-    
-    // 清空预览内容
-    previewContent.innerHTML = '<div class="preview-loading"><i class="fas fa-spinner fa-spin"></i></div>';
-    
-    // 显示模态框
-    previewModal.style.display = 'flex';
-    
-    // 根据文件类型生成预览内容
-    if (type && type.startsWith('image/')) {
-      // 图片预览
-      const img = document.createElement('img');
-      img.className = 'preview-image';
-      img.alt = name;
-      img.onload = () => {
-        previewContent.innerHTML = '';
-        previewContent.appendChild(img);
-      };
-      img.onerror = () => {
-        previewContent.innerHTML = `<div class="preview-error">图片加载失败</div>`;
-      };
-      img.src = url;
-    } else if (type && type.startsWith('video/')) {
-      // 视频预览
-      previewContent.innerHTML = `
-        <video class="preview-video" controls>
-          <source src="${url}" type="${type}">
-          您的浏览器不支持视频预览
-        </video>
-      `;
-    } else if (type && type.startsWith('audio/')) {
-      // 音频预览
-      previewContent.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-          <i class="fas fa-music" style="font-size: 48px; color: #4361ee;"></i>
-        </div>
-        <audio class="preview-audio" controls>
-          <source src="${url}" type="${type}">
-          您的浏览器不支持音频预览
-        </audio>
-      `;
-    } else if (type === 'text/markdown' || name.endsWith('.md')) {
-      // Markdown 预览
-      fetch(url)
-        .then(response => response.text())
-        .then(markdown => {
-          // 使用 marked.js 渲染 Markdown
-          if (typeof marked !== 'undefined') {
-            previewContent.innerHTML = marked.parse(markdown);
-          } else {
-            previewContent.innerHTML = `
-              <div style="text-align: center; margin-bottom: 20px;">
-                <i class="fas fa-file-alt" style="font-size: 48px; color: #4361ee;"></i>
-              </div>
-              <pre style="white-space: pre-wrap;">${markdown}</pre>
-            `;
-          }
-        })
-        .catch(error => {
-          previewContent.innerHTML = `<div class="preview-error">加载 Markdown 文件失败</div>`;
-        });
-    } else {
-      // 其他文件类型
-      previewContent.innerHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-          <i class="fas fa-file" style="font-size: 48px; color: #4361ee;"></i>
-        </div>
-        <p>此文件类型无法直接预览</p>
-        <a href="${url}" target="_blank" class="btn" style="display: inline-block; margin-top: 15px;">
-          <i class="fas fa-external-link-alt"></i> 在新窗口打开
-        </a>
-      `;
-    }
-  }
-  
-  // 关闭预览
-  function closePreview() {
-    console.log('Attempting to close preview modal...'); // 添加日志
-    if (previewModal) {
-      previewModal.style.display = 'none';
-      // 清空内容，防止音视频继续播放
-      if (previewContent) {
-        previewContent.innerHTML = '';
-        console.log('Preview modal closed and content cleared.'); // 添加日志
-      }
-    } else {
-        console.error('closePreview called but previewModal element not found!');
-    }
-  }
-  
-  // 为静态模态框的关闭按钮添加事件监听器
-  if (previewCloseBtn) {
-    previewCloseBtn.addEventListener('click', (event) => {
-        console.log('Preview close button clicked!'); // 添加日志
-        event.stopPropagation(); // 防止事件冒泡到 modal 背景的监听器
-        closePreview();
-    });
-    console.log('Close button event listener added.'); // 添加日志
-  } else {
-    console.error("Preview modal close button (#preview-close) not found!");
-  }
-
-  // 为模态框背景添加点击关闭事件监听器
-  if (previewModal) {
-    previewModal.addEventListener('click', (event) => {
-      // 如果点击事件的目标是模态框本身 (即背景)，则关闭
-      if (event.target === previewModal) {
-        console.log('Preview modal background clicked!'); // 添加日志
-        closePreview();
-      }
-    });
-    console.log('Modal background click listener added.'); // 添加日志
-
-    // 3. 添加 ESC 键关闭监听器 (添加到 document)
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && previewModal.style.display === 'flex') {
-        console.log('Escape key pressed, closing preview modal.'); // 添加日志
-        closePreview();
-      }
-    });
-    console.log('Escape keydown listener added to document.'); // 添加日志
-
-  } else {
-    console.error("Preview modal element (#preview-modal) not found!");
   }
   
   // 更新删除选中按钮状态
